@@ -6,7 +6,8 @@ export const CURRENCY = (process.env.NEXT_PUBLIC_CURRENCY ?? "usd").toLowerCase(
 let stripe: Stripe | undefined;
 export function stripeClient(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
+  // The .env.example placeholder ("sk_test_...") counts as unset.
+  if (!key || key.endsWith("...")) return null;
   stripe ??= new Stripe(key);
   return stripe;
 }
