@@ -239,10 +239,15 @@ function LivePanel({ state }: { state: CafeState }) {
   );
 }
 
-// Where the café is selling. Delivery apps are simulated; WhatsApp is still to come.
+// Where the café is selling. Delivery apps are simulated; WhatsApp is real when its keys are set.
 function Connections({ state }: { state: CafeState }) {
-  const apps = DELIVERY_APPS.map((a) => ({ ...a, on: state.connections.some((c) => c.id === a.id) }));
-  const anyOn = apps.some((a) => a.on);
+  const on = (id: string) => state.connections.some((c) => c.id === id);
+  const apps = [{ id: "whatsapp", name: "WhatsApp" }, ...DELIVERY_APPS].map((a) => ({ ...a, on: on(a.id) }));
+  const hint = !on("whatsapp")
+    ? "Say “connect WhatsApp”"
+    : !DELIVERY_APPS.some((a) => on(a.id))
+      ? "Say “put us on the delivery apps”"
+      : "Delivery apps are simulated for the demo.";
   return (
     <div>
       <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[#b3a291]">Selling on</h3>
@@ -258,7 +263,7 @@ function Connections({ state }: { state: CafeState }) {
         ))}
       </ul>
       <p className="mt-2 text-xs text-[#7a6a5c]">
-        {anyOn ? "Delivery apps are simulated for the demo." : "Say “put us on the delivery apps”"}
+        {hint}
       </p>
     </div>
   );

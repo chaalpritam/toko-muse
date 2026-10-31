@@ -30,6 +30,9 @@ export default function Counter() {
                 {muted ? "🔇 Call-outs off" : "🔊 Call-outs on"}
               </button>
               <span className="flex items-center gap-1">
+                <a className="btn" href="/whatsapp" target="_blank">
+                  Customer’s phone ↗
+                </a>
                 <span className="text-xs text-muted">Simulate:</span>
                 {(["online", "whatsapp", "delivery"] as const).map((c) => (
                   <button key={c} className="btn" onClick={() => api("/api/orders", { channel: c }).then(refresh)}>

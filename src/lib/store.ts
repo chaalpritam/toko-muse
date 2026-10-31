@@ -48,6 +48,7 @@ export interface Order {
   source: string;
   label: string;
   note: string;
+  contact: string;
   ready_at: string | null;
   status: OrderStatus;
   payment_status: PaymentStatus;
@@ -257,6 +258,7 @@ export function createOrder(opts: {
   source?: string;
   label?: string;
   note?: string;
+  contact?: string;
   status: OrderStatus;
   lines: NewLine[];
 }): Order {
@@ -268,8 +270,10 @@ export function createOrder(opts: {
   const total = lines.reduce((sum, l) => sum + menu.get(l.menu_item_id)!.price_cents * l.qty, 0);
   const number = nextNumber();
   const { lastInsertRowid } = db()
-    .prepare("INSERT INTO orders (number, channel, source, label, note, status, total_cents) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .run(number, opts.channel, opts.source ?? "", opts.label ?? "", opts.note ?? "", opts.status, total);
+    .prepare(
+      "INSERT INTO orders (number, channel, source, label, note, contact, status, total_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(number, opts.channel, opts.source ?? "", opts.label ?? "", opts.note ?? "", opts.contact ?? "", opts.status, total);
   const ins = db().prepare(
     "INSERT INTO order_items (order_id, menu_item_id, name, qty, unit_cents, notes) VALUES (?, ?, ?, ?, ?, ?)",
   );

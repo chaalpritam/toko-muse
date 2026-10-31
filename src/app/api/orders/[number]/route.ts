@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { startCheckout } from "@/lib/payments";
 import { getOrderByNumber, log, markPaid, setStatus, type OrderStatus } from "@/lib/store";
 import { money } from "@/lib/format";
+import { notifyOrderUpdate } from "@/lib/whatsapp";
 
 export async function PATCH(req: NextRequest, ctx: RouteContext<"/api/orders/[number]">) {
   const { number } = await ctx.params;
@@ -12,6 +13,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<"/api/orders/[nu
     if (body.status) {
       setStatus(order, body.status);
       log("Orders", `Order ${order.number} → ${body.status}.`);
+      await notifyOrderUpdate(order, body.status);
     }
     if (body.pay === "cash") {
       markPaid(order, "cash");

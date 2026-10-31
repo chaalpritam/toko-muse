@@ -3,6 +3,7 @@ import { MODELS, muse } from "./muse";
 import { money } from "./format";
 import { startCheckout } from "./payments";
 import { CHANNEL_LABEL, sourceOf, type Channel } from "./channels";
+import { connectWhatsApp, notifyOrderUpdate, whatsappConnected, whatsappLive } from "./whatsapp";
 import { connectDeliveryApps, connectedDeliveryApps, deliveryNote, disconnectDeliveryApps } from "./delivery";
 import {
   createApproval,
@@ -165,6 +166,14 @@ const tools: OpenAI.Chat.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "connect_whatsapp",
+      description: "Connect the café's WhatsApp Business number so customers can order by message.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "disconnect_delivery_apps",
       description: "Stop taking delivery-app orders, e.g. when the owner is swamped or closing.",
       parameters: { type: "object", properties: {} },
@@ -234,6 +243,7 @@ async function runTool(name: string, args: Record<string, unknown>, ctx: Ctx): P
       const prep = Number(args.prep_minutes);
       if (args.status === "accepted" && prep > 0) setPrepTime(order, prep);
       if (args.status === "cancelled" && args.reason) setNote(order, String(args.reason));
+      await notifyOrderUpdate(getOrderByNumber(order.number)!, args.status as OrderStatus, prep > 0 ? prep : undefined);
       const what = `${sourceOf(order)} order ${order.number}`;
       const detail =
         args.status === "accepted" && prep > 0
@@ -314,6 +324,15 @@ async function runTool(name: string, args: Record<string, unknown>, ctx: Ctx): P
           : `Already connected to ${all}.`,
       };
     }
+    case "connect_whatsapp": {
+      const added = connectWhatsApp();
+      return {
+        agent: "Orders",
+        result: `${added ? "WhatsApp connected" : "WhatsApp was already connected"}${
+          whatsappLive() ? "" : " (simulated: customers message from the /whatsapp page)"
+        }. Customers can now order by message; their orders come into the queue to pay at pickup, and they get updates as orders move along.`,
+      };
+    }
     case "disconnect_delivery_apps": {
       const names = disconnectDeliveryApps();
       return {
@@ -346,7 +365,7 @@ function snapshot() {
     .map((s) => `${s.name} ${s.qty}${s.unit}`)
     .join(", ");
   const apps = connectedDeliveryApps().map((c) => c.name).join(", ");
-  return `DELIVERY APPS: ${apps || "not connected"}\nMENU: ${menu}\nOPEN ORDERS:\n${open || "none"}\nLOW STOCK: ${low || "none"}`;
+  return `DELIVERY APPS: ${apps || "not connected"}\nWHATSAPP: ${whatsappConnected() ? "connected" : "not connected"}\nMENU: ${menu}\nOPEN ORDERS:\n${open || "none"}\nLOW STOCK: ${low || "none"}`;
 }
 
 const SYSTEM = `You are the back-office crew of a small café run by one owner. You are the Manager: the owner talks to you hands-free while making coffee, and you act through your team's tools (Orders, Payments, Stock, Suppliers, Books).
