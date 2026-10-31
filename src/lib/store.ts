@@ -1,9 +1,11 @@
 import { db } from "./db";
+import { CHANNELS, type Channel } from "./channels";
 
-export type Channel = "online" | "counter";
+export type { Channel };
 export type OrderStatus = "new" | "accepted" | "ready" | "done" | "cancelled";
 export type PaymentStatus = "unpaid" | "pending" | "paid" | "refunded";
-export type PaymentMethod = "cash" | "card" | "online";
+// "platform": a delivery app collected the money and pays the café out.
+export type PaymentMethod = "cash" | "card" | "online" | "platform";
 
 export interface MenuItem {
   id: number;
@@ -43,7 +45,10 @@ export interface Order {
   id: number;
   number: number;
   channel: Channel;
+  source: string;
   label: string;
+  note: string;
+  ready_at: string | null;
   status: OrderStatus;
   payment_status: PaymentStatus;
   payment_method: PaymentMethod | null;
@@ -249,7 +254,9 @@ export interface NewLine {
 
 export function createOrder(opts: {
   channel: Channel;
+  source?: string;
   label?: string;
+  note?: string;
   status: OrderStatus;
   lines: NewLine[];
 }): Order {
@@ -261,8 +268,8 @@ export function createOrder(opts: {
   const total = lines.reduce((sum, l) => sum + menu.get(l.menu_item_id)!.price_cents * l.qty, 0);
   const number = nextNumber();
   const { lastInsertRowid } = db()
-    .prepare("INSERT INTO orders (number, channel, label, status, total_cents) VALUES (?, ?, ?, ?, ?)")
-    .run(number, opts.channel, opts.label ?? "", opts.status, total);
+    .prepare("INSERT INTO orders (number, channel, source, label, note, status, total_cents) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .run(number, opts.channel, opts.source ?? "", opts.label ?? "", opts.note ?? "", opts.status, total);
   const ins = db().prepare(
     "INSERT INTO order_items (order_id, menu_item_id, name, qty, unit_cents, notes) VALUES (?, ?, ?, ?, ?, ?)",
   );
@@ -323,6 +330,22 @@ export function consumeStock(order: Order) {
 export function setStatus(order: Order, status: OrderStatus) {
   db().prepare("UPDATE orders SET status = ? WHERE id = ?").run(status, order.id);
   if (status === "accepted" || status === "ready" || status === "done") consumeStock(getOrder(order.id)!);
+}
+
+// The time the café promised the order would be ready, e.g. when accepting a delivery order.
+export function setPrepTime(order: Order, minutes: number) {
+  db().prepare("UPDATE orders SET ready_at = datetime('now', ?) WHERE id = ?").run(`+${Math.round(minutes)} minutes`, order.id);
+}
+
+export function setNote(order: Order, note: string) {
+  db().prepare("UPDATE orders SET note = ? WHERE id = ?").run(note, order.id);
+}
+
+// The order a spoken "accept the delivery order" means: the oldest one still waiting, optionally from one channel.
+export function oldestWaiting(channel?: Channel): Order | undefined {
+  return listTodayOrders()
+    .filter((o) => o.status === "new" && (!channel || o.channel === channel))
+    .at(-1);
 }
 
 export function markPaid(order: Order, method: PaymentMethod) {
@@ -392,7 +415,7 @@ export function listTodayExpenses(): Expense[] {
 export function daySummary() {
   const orders = listTodayOrders().filter((o) => o.status !== "cancelled");
   const paid = orders.filter((o) => o.payment_status === "paid");
-  const byMethod: Record<string, number> = { cash: 0, card: 0, online: 0 };
+  const byMethod: Record<PaymentMethod, number> = { cash: 0, card: 0, online: 0, platform: 0 };
   for (const o of paid) byMethod[o.payment_method ?? "cash"] += o.total_cents;
   const unpaid = orders.filter((o) => o.payment_status !== "paid" && o.payment_status !== "refunded");
   const expenses = listTodayExpenses();
@@ -401,8 +424,10 @@ export function daySummary() {
   const topItems = [...itemCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
   return {
     orders: orders.length,
-    online_orders: orders.filter((o) => o.channel === "online").length,
-    counter_orders: orders.filter((o) => o.channel === "counter").length,
+    by_channel: Object.fromEntries(CHANNELS.map((c) => [c, orders.filter((o) => o.channel === c).length])) as Record<
+      Channel,
+      number
+    >,
     revenue_cents: paid.reduce((s, o) => s + o.total_cents, 0),
     by_method_cents: byMethod,
     unpaid: unpaid.map((o) => ({ number: o.number, total_cents: o.total_cents, label: o.label })),

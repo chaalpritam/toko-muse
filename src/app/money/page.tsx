@@ -4,6 +4,7 @@ import { useState } from "react";
 import { OwnerShell } from "@/components/OwnerShell";
 import { api, fileToDataUrl, shrinkImage, speak, useCafeState } from "@/lib/client/state";
 import { money, timeOf } from "@/lib/format";
+import { CHANNELS, CHANNEL_LABEL, sourceOf } from "@/lib/channels";
 
 export default function MoneyPage() {
   const { state, refresh } = useCafeState();
@@ -56,11 +57,18 @@ export default function MoneyPage() {
               <Tile label="Card (Stripe)" value={money(s.by_method_cents.card)} />
               <Tile label="Online (Stripe)" value={money(s.by_method_cents.online)} />
               <Tile label="Cash" value={money(s.by_method_cents.cash)} />
+              <Tile label="Delivery apps" value={money(s.by_method_cents.platform)} />
               <Tile label="Expenses" value={money(s.expenses_cents)} />
               <Tile label="Net" value={money(s.revenue_cents - s.expenses_cents)} strong />
-              <Tile label="Online orders" value={`${s.online_orders}`} />
-              <Tile label="Counter orders" value={`${s.counter_orders}`} />
+              <Tile label="Orders" value={`${s.orders}`} />
             </div>
+          )}
+          {s && s.orders > 0 && (
+            <p className="mt-3 text-sm text-muted">
+              {CHANNELS.filter((c) => s.by_channel[c] > 0)
+                .map((c) => `${s.by_channel[c]} ${CHANNEL_LABEL[c]}`)
+                .join(" · ")}
+            </p>
           )}
           {s && s.unpaid.length > 0 && (
             <p className="mt-3 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
@@ -75,7 +83,7 @@ export default function MoneyPage() {
                 <span className="flex-1">
                   #{o.number} {o.label && <span className="text-muted">{o.label}</span>}
                 </span>
-                <span className="capitalize text-muted">{o.payment_method}</span>
+                <span className="capitalize text-muted">{o.payment_method === "platform" ? sourceOf(o) : o.payment_method}</span>
                 <span className="w-20 text-right tabular-nums">{money(o.total_cents)}</span>
               </li>
             ))}

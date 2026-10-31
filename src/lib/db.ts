@@ -54,7 +54,10 @@ CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY,
   number INTEGER NOT NULL,
   channel TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT '',
   label TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
+  ready_at TEXT,
   status TEXT NOT NULL,
   payment_status TEXT NOT NULL DEFAULT 'unpaid',
   payment_method TEXT,
@@ -217,11 +220,20 @@ export function resetDb(mode: "blank" | "sample") {
   }
 }
 
+// Columns added after the first release, for databases created before them.
+function migrate(db: DatabaseSync) {
+  const cols = new Set((db.prepare("PRAGMA table_info(orders)").all() as { name: string }[]).map((c) => c.name));
+  if (!cols.has("source")) db.exec("ALTER TABLE orders ADD COLUMN source TEXT NOT NULL DEFAULT ''");
+  if (!cols.has("note")) db.exec("ALTER TABLE orders ADD COLUMN note TEXT NOT NULL DEFAULT ''");
+  if (!cols.has("ready_at")) db.exec("ALTER TABLE orders ADD COLUMN ready_at TEXT");
+}
+
 function open(): DatabaseSync {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new DatabaseSync(DB_PATH);
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA);
+  migrate(db);
   if (!db.prepare("SELECT id FROM shop WHERE id = 1").get()) {
     // First run (or a database from before the shop profile existed): start as the sample café.
     const { n } = db.prepare("SELECT COUNT(*) AS n FROM menu_items").get() as { n: number };
