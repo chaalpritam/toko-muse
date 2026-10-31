@@ -1,5 +1,6 @@
 const STYLES: Record<string, string> = {
   Owner: "bg-line text-foreground",
+  Setup: "bg-[#e3eee9] text-[#2d6a55] dark:bg-[#1b2f28] dark:text-[#93d1b8]",
   Manager: "bg-[#e6e1f5] text-[#4b3a8c] dark:bg-[#2b2442] dark:text-[#c3b6f2]",
   Orders: "bg-accent-soft text-accent",
   Payments: "bg-ok-soft text-ok",

@@ -100,6 +100,12 @@ CREATE TABLE IF NOT EXISTS expenses (
   note TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS conversation (
+  id INTEGER PRIMARY KEY,
+  role TEXT NOT NULL,
+  text TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS promos (
   id INTEGER PRIMARY KEY,
   dish TEXT NOT NULL,
@@ -174,6 +180,9 @@ const SAMPLE = {
   hours: "Mon–Sat 7am–4pm",
 };
 
+export const GREETING =
+  "Hi, I'm Toko, your café's new crew. Let's get your shop set up, it only takes a few minutes. What's your café called?";
+
 export function slugify(name: string) {
   return (
     name
@@ -197,13 +206,14 @@ export function resetDb(mode: "blank" | "sample") {
   d.exec(`BEGIN;
     DELETE FROM order_items; DELETE FROM orders; DELETE FROM recipes; DELETE FROM menu_items;
     DELETE FROM stock_items; DELETE FROM suppliers; DELETE FROM approvals; DELETE FROM activity;
-    DELETE FROM expenses; DELETE FROM promos; DELETE FROM shop;
+    DELETE FROM expenses; DELETE FROM promos; DELETE FROM conversation; DELETE FROM shop;
     COMMIT;`);
   if (mode === "sample") {
     seed(d);
     seedSampleShop(d);
   } else {
     d.prepare("INSERT INTO shop (id) VALUES (1)").run();
+    d.prepare("INSERT INTO conversation (role, text) VALUES ('assistant', ?)").run(GREETING);
   }
 }
 
