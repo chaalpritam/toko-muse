@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Activity, Approval, Expense, MenuItem, Order, StockItem, daySummary } from "@/lib/store";
 import type { Shop } from "@/lib/shop";
 
 export interface CafeState {
   shop: Shop;
+  lastSetupLine: string | null;
   orders: Order[];
   approvals: Approval[];
   activity: Activity[];
@@ -43,11 +44,38 @@ export async function api<T = unknown>(url: string, body?: unknown, method = "PO
   return data as T;
 }
 
-export function speak(text: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis || !text) return;
+export function speak(text: string, onEnd?: () => void) {
+  if (typeof window === "undefined" || !window.speechSynthesis || !text) return onEnd?.();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 1.05;
+  if (onEnd) u.onend = u.onerror = () => onEnd();
   window.speechSynthesis.speak(u);
+}
+
+// Call-outs: speak new online orders and completed card payments, like a kitchen printer that talks.
+export function useCallOuts(state: CafeState | null, muted: boolean) {
+  const seen = useRef<Map<number, string> | null>(null);
+  useEffect(() => {
+    if (!state) return;
+    const prev = seen.current;
+    const next = new Map(state.orders.map((o) => [o.id, o.payment_status]));
+    if (prev && !muted) {
+      for (const o of state.orders) {
+        const before = prev.get(o.id);
+        const items = o.items.map((i) => `${i.qty} ${i.name}`).join(", ");
+        if (before === undefined && o.channel === "online" && o.payment_status !== "pending") {
+          speak(`New online order ${o.number}${o.label ? ` for ${o.label}` : ""}: ${items}.`);
+        } else if (before === "pending" && o.payment_status === "paid") {
+          speak(
+            o.channel === "online"
+              ? `New online order ${o.number}${o.label ? ` for ${o.label}` : ""}, paid: ${items}.`
+              : `Order ${o.number} paid by card.`,
+          );
+        }
+      }
+    }
+    seen.current = next;
+  }, [state, muted]);
 }
 
 export function fileToDataUrl(file: Blob): Promise<string> {

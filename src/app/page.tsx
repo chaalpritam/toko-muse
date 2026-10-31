@@ -1,42 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { OwnerShell } from "@/components/OwnerShell";
 import { AgentTag } from "@/components/AgentTag";
-import { api, speak, useCafeState } from "@/lib/client/state";
-import { Recorder } from "@/lib/client/recorder";
+import { api, speak, useCafeState, useCallOuts } from "@/lib/client/state";
+import { usePushToTalk, type Turn } from "@/lib/client/push-to-talk";
 import { money, timeOf } from "@/lib/format";
-import type { AgentTurn } from "@/lib/agent";
 import type { Approval, Order } from "@/lib/store";
 
 export default function Counter() {
   const { state, refresh } = useCafeState();
   const [muted, setMuted] = useState(false);
-  const seen = useRef<Map<number, string> | null>(null);
-
-  // Call-outs: speak new online orders and completed card payments, like a kitchen printer that talks.
-  useEffect(() => {
-    if (!state) return;
-    const prev = seen.current;
-    const next = new Map(state.orders.map((o) => [o.id, o.payment_status]));
-    if (prev && !muted) {
-      for (const o of state.orders) {
-        const before = prev.get(o.id);
-        const items = o.items.map((i) => `${i.qty} ${i.name}`).join(", ");
-        if (before === undefined && o.channel === "online" && o.payment_status !== "pending") {
-          speak(`New online order ${o.number}${o.label ? ` for ${o.label}` : ""}: ${items}.`);
-        } else if (before === "pending" && o.payment_status === "paid") {
-          speak(
-            o.channel === "online"
-              ? `New online order ${o.number}${o.label ? ` for ${o.label}` : ""}, paid: ${items}.`
-              : `Order ${o.number} paid by card.`,
-          );
-        }
-      }
-    }
-    seen.current = next;
-  }, [state, muted]);
+  useCallOuts(state, muted);
 
   const qrOrder = state?.orders.find((o) => o.channel === "counter" && o.payment_status === "pending" && o.stripe_url);
 
@@ -187,100 +163,21 @@ function alertInline(message: string) {
   console.error(message);
 }
 
-type Turn = { you: string; reply?: string; actions?: AgentTurn["actions"]; error?: string };
-
 function Crew({ refresh, muted }: { refresh: () => void; muted: boolean }) {
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [deviceId, setDeviceId] = useState<string>("");
-  const [phase, setPhase] = useState<"idle" | "listening" | "thinking">("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [text, setText] = useState("");
-  const recorder = useRef<Recorder | null>(null);
-
-  // Prefer the ReSpeaker XVF3800 when it's plugged in.
-  const applyDevices = (list: MediaDeviceInfo[]) => {
-    const all = list.filter((d) => d.kind === "audioinput");
-    setDevices(all);
-    const xvf = all.find((d) => /xvf|respeaker|array/i.test(d.label));
-    setDeviceId((cur) => cur || xvf?.deviceId || "");
-  };
-  const loadDevices = () => navigator.mediaDevices.enumerateDevices().then(applyDevices);
-  useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then(applyDevices);
-  }, []);
-
   const finish = (turn: Turn) => {
     setTurns((t) => [turn, ...t].slice(0, 10));
     if (turn.reply && !muted) speak(turn.reply);
     refresh();
   };
-
-  const startTalking = async () => {
+  const { devices, deviceId, setDeviceId, loadDevices, phase, start: startTalking, stop: stopTalking, sendText: send } =
+    usePushToTalk(finish);
+  const sendText = () => {
     if (phase !== "idle") return;
-    window.speechSynthesis?.cancel();
-    try {
-      recorder.current = new Recorder();
-      await recorder.current.start(deviceId || undefined);
-      setPhase("listening");
-      if (!devices.some((d) => d.label)) void loadDevices();
-    } catch (err) {
-      finish({ you: "(mic)", error: (err as Error).message });
-    }
-  };
-
-  const stopTalking = async () => {
-    if (phase !== "listening" || !recorder.current) return;
-    setPhase("thinking");
-    const wav = await recorder.current.stop();
-    try {
-      const res = await fetch("/api/voice", { method: "POST", body: wav, headers: { "Content-Type": "audio/wav" } });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      if (data.transcript) finish({ you: data.transcript, reply: data.reply, actions: data.actions });
-    } catch (err) {
-      finish({ you: "(voice)", error: (err as Error).message });
-    } finally {
-      setPhase("idle");
-    }
-  };
-
-  const sendText = async () => {
-    const t = text.trim();
-    if (!t || phase !== "idle") return;
     setText("");
-    setPhase("thinking");
-    try {
-      const turn = await api<AgentTurn>("/api/agent", { text: t });
-      finish({ you: t, ...turn });
-    } catch (err) {
-      finish({ you: t, error: (err as Error).message });
-    } finally {
-      setPhase("idle");
-    }
+    void send(text);
   };
-
-  // Hold Space anywhere (outside a text box) to talk.
-  useEffect(() => {
-    const isTyping = (e: KeyboardEvent) => (e.target as HTMLElement)?.closest("input, textarea, select");
-    const down = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !e.repeat && !isTyping(e)) {
-        e.preventDefault();
-        void startTalking();
-      }
-    };
-    const up = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !isTyping(e)) {
-        e.preventDefault();
-        void stopTalking();
-      }
-    };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-    };
-  });
 
   return (
     <section className="card p-4">

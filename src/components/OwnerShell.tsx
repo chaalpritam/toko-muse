@@ -10,6 +10,7 @@ const NAV = [
   { href: "/stock", label: "Stock" },
   { href: "/money", label: "Money" },
   { href: "/promo", label: "Promo" },
+  { href: "/device", label: "Device" },
 ];
 
 export function OwnerShell({ state, children }: { state: CafeState | null; children: React.ReactNode }) {
