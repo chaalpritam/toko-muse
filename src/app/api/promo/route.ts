@@ -2,8 +2,7 @@ import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { askText, editImage } from "@/lib/muse";
 import { log } from "@/lib/store";
-
-const CAFE = process.env.NEXT_PUBLIC_CAFE_NAME ?? "Muse Café";
+import { getShop } from "@/lib/shop";
 
 export async function GET() {
   return Response.json(db().prepare("SELECT * FROM promos ORDER BY id DESC LIMIT 12").all());
@@ -12,6 +11,7 @@ export async function GET() {
 // Promoter: the dish cut out by SAM becomes a poster (Muse Image) with a caption (Muse Spark).
 export async function POST(req: NextRequest) {
   const { image, dish, price, note } = (await req.json()) as { image: string; dish: string; price?: string; note?: string };
+  const CAFE = getShop().name || "our café";
   try {
     const [poster, caption] = await Promise.all([
       editImage(

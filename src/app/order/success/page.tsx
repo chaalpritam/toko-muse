@@ -5,11 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { money } from "@/lib/format";
 
-const CAFE = process.env.NEXT_PUBLIC_CAFE_NAME ?? "Muse Café";
-
 function Success() {
   const sessionId = useSearchParams().get("session_id");
-  const [order, setOrder] = useState<{ number: number; payment_status: string; total_cents: number } | null>(null);
+  const [order, setOrder] = useState<{ shop: string; number: number; payment_status: string; total_cents: number } | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,7 +19,7 @@ function Success() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-2 px-4 text-center">
-      <p className="text-sm text-muted">{CAFE}</p>
+      <p className="text-sm text-muted">{order?.shop}</p>
       {order ? (
         <>
           <h1 className="text-2xl font-semibold">

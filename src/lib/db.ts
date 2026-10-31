@@ -5,6 +5,18 @@ import path from "node:path";
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), "data", "cafe.db");
 
 const SCHEMA = `
+CREATE TABLE IF NOT EXISTS shop (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  name TEXT NOT NULL DEFAULT '',
+  slug TEXT NOT NULL DEFAULT '',
+  tagline TEXT NOT NULL DEFAULT '',
+  about TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
+  hours TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  stage TEXT NOT NULL DEFAULT 'new',
+  launched_at TEXT
+);
 CREATE TABLE IF NOT EXISTS suppliers (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
@@ -155,13 +167,57 @@ function seed(db: DatabaseSync) {
   db.prepare("INSERT INTO activity (agent, text) VALUES (?, ?)").run("Manager", "Café set up with the sample menu and stock.");
 }
 
+const SAMPLE = {
+  name: "Muse Café",
+  tagline: "Small-batch coffee and fresh bakes, made by one pair of hands.",
+  address: "12 Harbour Lane",
+  hours: "Mon–Sat 7am–4pm",
+};
+
+export function slugify(name: string) {
+  return (
+    name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "my-cafe"
+  );
+}
+
+function seedSampleShop(db: DatabaseSync) {
+  db.prepare(
+    "INSERT INTO shop (id, name, slug, tagline, address, hours, stage, launched_at) VALUES (1, ?, ?, ?, ?, ?, 'live', datetime('now'))",
+  ).run(SAMPLE.name, slugify(SAMPLE.name), SAMPLE.tagline, SAMPLE.address, SAMPLE.hours);
+}
+
+// Wipes the device. "blank" is a fresh-out-of-the-box device that waits to be set up by voice;
+// "sample" brings back the demo café.
+export function resetDb(mode: "blank" | "sample") {
+  const d = db();
+  d.exec(`BEGIN;
+    DELETE FROM order_items; DELETE FROM orders; DELETE FROM recipes; DELETE FROM menu_items;
+    DELETE FROM stock_items; DELETE FROM suppliers; DELETE FROM approvals; DELETE FROM activity;
+    DELETE FROM expenses; DELETE FROM promos; DELETE FROM shop;
+    COMMIT;`);
+  if (mode === "sample") {
+    seed(d);
+    seedSampleShop(d);
+  } else {
+    d.prepare("INSERT INTO shop (id) VALUES (1)").run();
+  }
+}
+
 function open(): DatabaseSync {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new DatabaseSync(DB_PATH);
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA);
-  const { n } = db.prepare("SELECT COUNT(*) AS n FROM menu_items").get() as { n: number };
-  if (n === 0) seed(db);
+  if (!db.prepare("SELECT id FROM shop WHERE id = 1").get()) {
+    // First run (or a database from before the shop profile existed): start as the sample café.
+    const { n } = db.prepare("SELECT COUNT(*) AS n FROM menu_items").get() as { n: number };
+    if (n === 0) seed(db);
+    seedSampleShop(db);
+  }
   return db;
 }
 

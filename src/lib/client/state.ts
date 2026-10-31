@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Activity, Approval, Expense, MenuItem, Order, StockItem, daySummary } from "@/lib/store";
+import type { Shop } from "@/lib/shop";
 
 export interface CafeState {
+  shop: Shop;
   orders: Order[];
   approvals: Approval[];
   activity: Activity[];

@@ -1,4 +1,5 @@
 import { syncCheckout, stripeClient } from "@/lib/payments";
+import { getShop } from "@/lib/shop";
 import { daySummary, listActivity, listApprovals, listMenu, listStock, listTodayExpenses, listTodayOrders } from "@/lib/store";
 
 export async function GET() {
@@ -6,6 +7,7 @@ export async function GET() {
   const pending = listTodayOrders().filter((o) => o.payment_status === "pending" && o.stripe_session_id);
   await Promise.allSettled(pending.map((o) => syncCheckout(o.stripe_session_id!)));
   return Response.json({
+    shop: getShop(),
     orders: listTodayOrders(),
     approvals: listApprovals(),
     activity: listActivity(),

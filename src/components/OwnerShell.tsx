@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import type { CafeState } from "@/lib/client/state";
 import { money } from "@/lib/format";
 
-const CAFE = process.env.NEXT_PUBLIC_CAFE_NAME ?? "Muse Café";
-
 const NAV = [
   { href: "/", label: "Counter" },
   { href: "/stock", label: "Stock" },
@@ -22,7 +20,7 @@ export function OwnerShell({ state, children }: { state: CafeState | null; child
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <div className="flex items-baseline gap-2">
-            <span className="text-lg font-semibold">{CAFE}</span>
+            <span className="text-lg font-semibold">{state?.shop.name || "Your café"}</span>
             <span className="text-xs text-muted">Toko Muse back office</span>
           </div>
           <nav className="flex gap-1">
@@ -37,8 +35,8 @@ export function OwnerShell({ state, children }: { state: CafeState | null; child
                 {n.label}
               </Link>
             ))}
-            <a href="/order" target="_blank" className="rounded-lg px-3 py-1.5 text-sm text-muted hover:text-foreground">
-              Order page ↗
+            <a href={state?.shop.slug ? `/s/${state.shop.slug}` : "/order"} target="_blank" className="rounded-lg px-3 py-1.5 text-sm text-muted hover:text-foreground">
+              Store ↗
             </a>
           </nav>
           {s && (
