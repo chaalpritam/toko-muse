@@ -10,7 +10,7 @@ Built for the [Meta Global AI Developer Hackathon](https://dev.meta.ai/events/gl
 |---|---|---|
 | **Setup** | On a new device, asks for the café's name, menu and prices, ingredients, hours, address and suppliers, one question at a time, then writes the store's front page and launches it | Muse Spark (tool calling) |
 | **Manager** | Takes every spoken command, hands work to the crew, replies out loud | Muse Spark (tool calling) |
-| **Orders** | One queue for online orders and counter orders. Spoken orders like *"two oat lattes for table 4, paid cash"* are rung up. New orders are called out loud | Muse Spark |
+| **Orders** | One queue for counter, website, WhatsApp and delivery-app orders. *"Put us on the delivery apps"* publishes the menu and starts taking their orders; *"accept the delivery order, ten minutes"* accepts and promises a time. Spoken orders like *"two oat lattes for table 4, paid cash"* are rung up. New orders are called out loud | Muse Spark |
 | **Payments** | Stripe Checkout for online orders, a Stripe QR on the counter screen for cards, cash logged by voice. Refunds wait for the owner's OK | Stripe |
 | **Stock** | Recipes use up ingredients. *"We're out of oat milk"* marks every drink that uses it sold out online. At or below par, it drafts a reorder | Muse Spark |
 | **Case Watcher** | A camera on the pastry case counts each item. Counts become stock levels, and empty trays are marked sold out | SAM 3.1 |
@@ -41,6 +41,10 @@ Phones can't reach `localhost`, so to scan the store's QR code from a phone set 
 
 Without `STRIPE_SECRET_KEY`, online orders are pay-at-pickup and the Card button is hidden. Stripe payments are confirmed by polling the Checkout Session, so no webhook or Stripe CLI is needed locally. Use test card `4242 4242 4242 4242`.
 
+## Delivery apps
+
+Real delivery networks (Uber Eats, DoorDash, Deliveroo) only open their APIs to approved partners, so the demo uses two made-up apps, **QuickBite** and **Hopper Eats**, and the device says so. Once connected, each one sends an order every `DELIVERY_EVERY_SECONDS` (90 by default) using only what's on the menu right now, already paid in the app. Orders left waiting for two minutes get a spoken reminder. *"Pause the delivery apps"* stops them.
+
 ## ReSpeaker XVF3800
 
 Plug the XVF3800 into the Mac or PC over USB. It shows up as a normal mic, and the Counter page picks it automatically (or choose it from the mic menu). The XVF3800 does echo cancellation, beamforming and noise suppression in hardware, so the browser's own processing is turned off. For spoken replies and call-outs, set the system audio output to the XVF3800's speaker jack.
@@ -56,9 +60,9 @@ Plug the XVF3800 into the Mac or PC over USB. It shows up as a normal mic, and t
 
 **Run the shop**
 
-5. **Simulate online order** on `/` → the device calls it out.
+5. *"Put us on the delivery apps."* → QuickBite and Hopper Eats light up on the device, and their orders start arriving and are called out. *"Accept the QuickBite order, ten minutes."*
 6. Hold Space: *"Two oat lattes and a butter croissant for table 4, card."* → the order appears and a Stripe QR pops up → pay with the test card → *"Order 2 paid by card."*
-7. *"We're out of oat milk."* → Oat Latte disappears from the store, and an oat milk reorder waits for approval → Approve.
+7. *"We're out of oat milk."* → Oat Latte disappears from the store and the delivery apps, and an oat milk reorder waits for approval → Approve.
 8. `/stock` → **Count the case** → SAM outlines each pastry, and empty trays go sold out.
 9. `/money` → snap a supplier invoice → expense logged, stock topped up → **Close the day** → spoken briefing.
 10. `/promo` → photo of a croissant → poster and caption, which also shows on the store as today's special.
