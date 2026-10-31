@@ -2,6 +2,7 @@ import type OpenAI from "openai";
 import { MODELS, muse } from "./muse";
 import { money } from "./format";
 import { startCheckout } from "./payments";
+import { CHANNEL_LABEL, sourceOf, type Channel } from "./channels";
 import {
   createApproval,
   createOrder,
@@ -11,6 +12,7 @@ import {
   findStockItem,
   getOrderByNumber,
   ingredientOut,
+  oldestWaiting,
   listMenu,
   listStock,
   listTodayOrders,
@@ -18,6 +20,8 @@ import {
   markPaid,
   restock,
   setAvailable,
+  setNote,
+  setPrepTime,
   setStatus,
   type OrderStatus,
 } from "./store";
@@ -59,14 +63,22 @@ const tools: OpenAI.Chat.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "update_order",
-      description: "Move an order along: accept it, mark it ready, done (handed over) or cancelled.",
+      description:
+        "Move an order along: accept it (optionally promising a prep time), mark it ready, done (handed over), or cancel/reject it. Without a number, it picks the oldest order still waiting, optionally from one channel, e.g. 'accept the delivery order'.",
       parameters: {
         type: "object",
         properties: {
           number: { type: "integer" },
+          channel: {
+            type: "string",
+            enum: ["counter", "online", "whatsapp", "delivery"],
+            description: "When no number is given: which channel's waiting order. 'online' is the café's website.",
+          },
           status: { type: "string", enum: ["accepted", "ready", "done", "cancelled"] },
+          prep_minutes: { type: "integer", description: "When accepting: minutes until it's ready, if the owner says" },
+          reason: { type: "string", description: "When cancelling or rejecting: why, if the owner says" },
         },
-        required: ["number", "status"],
+        required: ["status"],
       },
     },
   },
@@ -192,11 +204,28 @@ async function runTool(name: string, args: Record<string, unknown>, ctx: Ctx): P
       };
     }
     case "update_order": {
-      const order = getOrderByNumber(Number(args.number));
-      if (!order) return { agent: "Orders", result: `No order ${args.number} today.` };
+      const channel = args.channel as Channel | undefined;
+      const order = args.number ? getOrderByNumber(Number(args.number)) : oldestWaiting(channel);
+      if (!order)
+        return {
+          agent: "Orders",
+          result: args.number
+            ? `No order ${args.number} today.`
+            : `No ${channel ? `${CHANNEL_LABEL[channel]} ` : ""}orders waiting.`,
+        };
       setStatus(order, args.status as OrderStatus);
-      log("Orders", `Order ${order.number} → ${args.status}.`);
-      return { agent: "Orders", result: `Order ${order.number} is now ${args.status}.` };
+      const prep = Number(args.prep_minutes);
+      if (args.status === "accepted" && prep > 0) setPrepTime(order, prep);
+      if (args.status === "cancelled" && args.reason) setNote(order, String(args.reason));
+      const what = `${sourceOf(order)} order ${order.number}`;
+      const detail =
+        args.status === "accepted" && prep > 0
+          ? `accepted, ready in ${prep} minutes`
+          : args.status === "cancelled"
+            ? `rejected${args.reason ? ` (${args.reason})` : ""}`
+            : `now ${args.status}`;
+      log("Orders", `${what} ${detail}.`);
+      return { agent: "Orders", result: `${what} ${detail}.` };
     }
     case "take_payment": {
       const order = getOrderByNumber(Number(args.number));
@@ -270,7 +299,7 @@ function snapshot() {
     .filter((o) => o.status !== "done" && o.status !== "cancelled")
     .map(
       (o) =>
-        `#${o.number} ${o.channel}${o.label ? ` ${o.label}` : ""} ${o.status} ${o.payment_status}: ${o.items
+        `#${o.number} ${o.channel}${o.source ? ` via ${o.source}` : ""}${o.label ? ` ${o.label}` : ""} ${o.status} ${o.payment_status}: ${o.items
           .map((i) => `${i.qty} ${i.name}`)
           .join(", ")}`,
     )
@@ -283,6 +312,7 @@ function snapshot() {
 }
 
 const SYSTEM = `You are the back-office crew of a small café run by one owner. You are the Manager: the owner talks to you hands-free while making coffee, and you act through your team's tools (Orders, Payments, Stock, Suppliers, Books).
+- Orders come in from the counter, the café's website ("online"), WhatsApp and delivery apps; new ones wait in status "new" until the owner accepts or rejects them.
 - Act immediately on clear instructions; don't ask for confirmation, the tools already hold anything risky for approval.
 - Spoken input can mishear item names; map them to the closest menu item.
 - Your reply is spoken aloud: one or two short sentences, no lists, no markdown, say amounts naturally.`;
