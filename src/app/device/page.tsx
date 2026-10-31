@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { api, speak, useCafeState, useCallOuts, type CafeState } from "@/lib/client/state";
 import { usePushToTalk, type Turn } from "@/lib/client/push-to-talk";
 import { money } from "@/lib/format";
+import { sourceOf } from "@/lib/channels";
 
 // What the café's counter device shows: one orb you hold to talk to, and what it's doing.
 // On a new device it walks the owner through setting up the shop; once live it runs the counter.
@@ -201,6 +202,7 @@ function LivePanel({ state }: { state: CafeState }) {
     void QRCode.toDataURL(url, { margin: 1, width: 280 }).then(setQr);
   }, [url]);
   const open = state.orders.filter((o) => o.status !== "done" && o.status !== "cancelled");
+  const waiting = state.orders.filter((o) => o.status === "new").reverse();
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-[#3a2f26] bg-[#17120e] p-5">
       <h2 className="text-sm font-medium uppercase tracking-wide text-[#b3a291]">Your store is live</h2>
@@ -213,6 +215,21 @@ function LivePanel({ state }: { state: CafeState }) {
         <Stat label="Taken today" value={money(state.summary.revenue_cents)} />
         <Stat label="Needs OK" value={`${state.approvals.length}`} />
       </div>
+      {waiting.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[#b3a291]">Waiting for you</h3>
+          <ul className="flex flex-col gap-1.5 text-sm">
+            {waiting.slice(0, 5).map((o) => (
+              <li key={o.id} className="flex items-center gap-2 rounded-lg bg-[#211a14] px-3 py-2">
+                <span className="font-semibold tabular-nums">#{o.number}</span>
+                <span className="rounded-full bg-[#3a2f26] px-2 text-xs">{sourceOf(o)}</span>
+                <span className="min-w-0 truncate text-[#b3a291]">{o.items.map((i) => `${i.qty} ${i.name}`).join(", ")}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-[#7a6a5c]">Say “accept the {sourceOf(waiting[0])} order, ten minutes”</p>
+        </div>
+      )}
       <Link href="/" className="text-center text-sm text-[#b3a291] underline">
         Open the back office
       </Link>

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { OwnerShell } from "@/components/OwnerShell";
 import { AgentTag } from "@/components/AgentTag";
+import { ChannelTag } from "@/components/ChannelTag";
+import { CHANNEL_LABEL } from "@/lib/channels";
 import { api, speak, useCafeState, useCallOuts } from "@/lib/client/state";
 import { usePushToTalk, type Turn } from "@/lib/client/push-to-talk";
 import { money, timeOf } from "@/lib/format";
@@ -22,14 +24,19 @@ export default function Counter() {
         <section className="min-w-0">
           <div className="mb-3 flex items-center gap-2">
             <h1 className="text-xl font-semibold">Orders</h1>
-            <span className="text-sm text-muted">online and counter, one queue</span>
-            <div className="ml-auto flex gap-2">
+            <span className="text-sm text-muted">every channel, one queue</span>
+            <div className="ml-auto flex flex-wrap gap-2">
               <button className="btn" onClick={() => setMuted((m) => !m)}>
                 {muted ? "🔇 Call-outs off" : "🔊 Call-outs on"}
               </button>
-              <button className="btn" onClick={() => api("/api/orders").then(refresh)}>
-                + Simulate online order
-              </button>
+              <span className="flex items-center gap-1">
+                <span className="text-xs text-muted">Simulate:</span>
+                {(["online", "whatsapp", "delivery"] as const).map((c) => (
+                  <button key={c} className="btn" onClick={() => api("/api/orders", { channel: c }).then(refresh)}>
+                    + {CHANNEL_LABEL[c]}
+                  </button>
+                ))}
+              </span>
             </div>
           </div>
           {state ? <Board orders={state.orders} stripe={state.stripe} refresh={refresh} /> : <p className="text-muted">Loading…</p>}
@@ -107,9 +114,7 @@ function OrderCard({ order: o, stripe, refresh }: { order: Order; stripe: boolea
     <article className={`card p-3 ${done ? "opacity-60" : ""}`}>
       <div className="flex items-center gap-2">
         <span className="text-lg font-semibold tabular-nums">#{o.number}</span>
-        <span className={`pill ${o.channel === "online" ? "bg-accent-soft text-accent" : "bg-line"}`}>
-          {o.channel === "online" ? "Online" : "Counter"}
-        </span>
+        <ChannelTag order={o} />
         {o.label && <span className="truncate text-sm text-muted">{o.label}</span>}
         <span className="ml-auto text-xs text-muted">{timeOf(o.created_at)}</span>
       </div>
@@ -121,6 +126,8 @@ function OrderCard({ order: o, stripe, refresh }: { order: Order; stripe: boolea
           </li>
         ))}
       </ul>
+      {o.ready_at && !done && <p className="mb-1 text-xs font-medium text-accent">Ready by {timeOf(o.ready_at)}</p>}
+      {o.note && <p className="mb-1 text-xs text-muted">{o.note}</p>}
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="mr-auto text-sm font-semibold tabular-nums">{money(o.total_cents)}</span>
         <PayBadge order={o} />
@@ -130,6 +137,11 @@ function OrderCard({ order: o, stripe, refresh }: { order: Order; stripe: boolea
           {next[o.status] && (
             <button className="btn btn-primary" disabled={busy} onClick={() => act({ status: next[o.status][0] })}>
               {next[o.status][1]}
+            </button>
+          )}
+          {o.status === "new" && (
+            <button className="btn" disabled={busy} onClick={() => act({ status: "cancelled" })}>
+              Reject
             </button>
           )}
           {o.payment_status === "unpaid" && (

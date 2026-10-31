@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Activity, Approval, Expense, MenuItem, Order, StockItem, daySummary } from "@/lib/store";
 import type { Shop } from "@/lib/shop";
+import { sourceOf } from "@/lib/channels";
 
 export interface CafeState {
   shop: Shop;
@@ -63,14 +64,12 @@ export function useCallOuts(state: CafeState | null, muted: boolean) {
       for (const o of state.orders) {
         const before = prev.get(o.id);
         const items = o.items.map((i) => `${i.qty} ${i.name}`).join(", ");
-        if (before === undefined && o.channel === "online" && o.payment_status !== "pending") {
-          speak(`New online order ${o.number}${o.label ? ` for ${o.label}` : ""}: ${items}.`);
+        const from = `${o.channel === "online" ? "online" : sourceOf(o)} order ${o.number}${o.label ? ` for ${o.label}` : ""}`;
+        // Website orders paying by Stripe are called out once paid; everything else as soon as it lands.
+        if (before === undefined && o.channel !== "counter" && o.payment_status !== "pending") {
+          speak(`New ${from}: ${items}.`);
         } else if (before === "pending" && o.payment_status === "paid") {
-          speak(
-            o.channel === "online"
-              ? `New online order ${o.number}${o.label ? ` for ${o.label}` : ""}, paid: ${items}.`
-              : `Order ${o.number} paid by card.`,
-          );
+          speak(o.channel === "counter" ? `Order ${o.number} paid by card.` : `New ${from}, paid: ${items}.`);
         }
       }
     }
