@@ -1,6 +1,6 @@
 # Toko Muse
 
-**A voice-first back office for cafés run by one person.** The owner makes coffee, takes payments and keeps the shop running alone. Toko Muse gives them a crew of AI agents on Meta's Muse models, driven hands-free through a ReSpeaker XVF3800 mic array on the counter.
+**A counter device that runs a one-person café.** The owner makes coffee, takes payments and keeps the shop running alone. Toko Muse is a small device on the counter (a ReSpeaker XVF3800 mic array) with a crew of AI agents on Meta's Muse models. Out of the box, the owner sets up their shop just by talking to it: the device builds the menu and stock, then launches the café's online store. From then on it runs the counter hands-free.
 
 Built for the [Meta Global AI Developer Hackathon](https://dev.meta.ai/events/global-hackathon).
 
@@ -8,6 +8,7 @@ Built for the [Meta Global AI Developer Hackathon](https://dev.meta.ai/events/gl
 
 | Agent | Job | Model |
 |---|---|---|
+| **Setup** | On a new device, asks for the café's name, menu and prices, ingredients, hours, address and suppliers, one question at a time, then writes the store's front page and launches it | Muse Spark (tool calling) |
 | **Manager** | Takes every spoken command, hands work to the crew, replies out loud | Muse Spark (tool calling) |
 | **Orders** | One queue for online orders and counter orders. Spoken orders like *"two oat lattes for table 4, paid cash"* are rung up. New orders are called out loud | Muse Spark |
 | **Payments** | Stripe Checkout for online orders, a Stripe QR on the counter screen for cards, cash logged by voice. Refunds wait for the owner's OK | Stripe |
@@ -27,13 +28,16 @@ npm install
 npm run dev                  # http://localhost:3000
 ```
 
+- `/device` The counter device: hold the orb (or **Space**) to talk. A new device walks you through setup; a live one shows the store's QR code
 - `/` Counter: order board, push-to-talk (hold the button or **Space**), approvals, crew activity
 - `/stock` Menu, ingredients, display-case camera
 - `/money` Takings by payment method, receipts, close of day
 - `/promo` Today's special → poster and caption
-- `/order` The café's public online order page
+- `/s/<café-name>` The store the device launched: front page and online ordering (`/order` redirects here)
 
-Data lives in `data/cafe.db` (SQLite, built into Node 22+). A sample café is seeded on first run. Delete the file to start over.
+Data lives in `data/cafe.db` (SQLite, built into Node 22+). A sample café is seeded on first run. To unbox a fresh device, open `/device` → **Device ⋯** → **Reset to a new device**. **Load the sample café** brings the demo data back.
+
+Phones can't reach `localhost`, so to scan the store's QR code from a phone set `NEXT_PUBLIC_STORE_ORIGIN` to a tunnel or LAN address.
 
 Without `STRIPE_SECRET_KEY`, online orders are pay-at-pickup and the Card button is hidden. Stripe payments are confirmed by polling the Checkout Session, so no webhook or Stripe CLI is needed locally. Use test card `4242 4242 4242 4242`.
 
@@ -41,14 +45,23 @@ Without `STRIPE_SECRET_KEY`, online orders are pay-at-pickup and the Card button
 
 Plug the XVF3800 into the Mac or PC over USB. It shows up as a normal mic, and the Counter page picks it automatically (or choose it from the mic menu). The XVF3800 does echo cancellation, beamforming and noise suppression in hardware, so the browser's own processing is turned off. For spoken replies and call-outs, set the system audio output to the XVF3800's speaker jack.
 
-## Demo script (≈2 min)
+## Demo script (≈3 min)
 
-1. **Simulate online order** → the crew calls it out.
-2. Hold Space: *"Two oat lattes and a butter croissant for table 4, card."* → the order appears and a Stripe QR pops up → pay with the test card → *"Order 2 paid by card."*
-3. *"We're out of oat milk."* → Oat Latte disappears from `/order`, and an oat milk reorder waits for approval → Approve.
-4. `/stock` → **Count the case** → SAM outlines each pastry, and empty trays go sold out.
-5. `/money` → snap a supplier invoice → expense logged, stock topped up → **Close the day** → spoken briefing.
-6. `/promo` → photo of a croissant → poster and caption.
+**Unbox and set up** (start from **Reset to a new device** on `/device`)
+
+1. Tap the screen → Toko greets you and asks the café's name. Hold Space: *"It's called Bean There."*
+2. *"We sell oat lattes for five fifty and butter croissants for three seventy-five."* → items appear on the setup checklist. Toko asks what goes into them: *"Oat milk and a double shot. Croissants come from the bakery."*
+3. *"We're open weekdays seven to three, at 4 Mill Street."*
+4. *"Launch the store."* → the store's front page is written, the QR code appears, and `/s/bean-there` is live.
+
+**Run the shop**
+
+5. **Simulate online order** on `/` → the device calls it out.
+6. Hold Space: *"Two oat lattes and a butter croissant for table 4, card."* → the order appears and a Stripe QR pops up → pay with the test card → *"Order 2 paid by card."*
+7. *"We're out of oat milk."* → Oat Latte disappears from the store, and an oat milk reorder waits for approval → Approve.
+8. `/stock` → **Count the case** → SAM outlines each pastry, and empty trays go sold out.
+9. `/money` → snap a supplier invoice → expense logged, stock topped up → **Close the day** → spoken briefing.
+10. `/promo` → photo of a croissant → poster and caption, which also shows on the store as today's special.
 
 ## Stack
 
