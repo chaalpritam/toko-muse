@@ -33,6 +33,7 @@ npm run dev                  # http://localhost:3000
 - `/stock` Menu, ingredients, display-case camera
 - `/money` Takings by payment method, receipts, close of day
 - `/promo` Today's special → poster and caption
+- `/whatsapp` A customer's phone messaging the café on WhatsApp (when WhatsApp isn't connected for real)
 - `/s/<café-name>` The store the device launched: front page and online ordering (`/order` redirects here)
 
 Data lives in `data/cafe.db` (SQLite, built into Node 22+). A sample café is seeded on first run. To unbox a fresh device, open `/device` → **Device ⋯** → **Reset to a new device**. **Load the sample café** brings the demo data back.
@@ -45,11 +46,17 @@ Without `STRIPE_SECRET_KEY`, online orders are pay-at-pickup and the Card button
 
 Real delivery networks (Uber Eats, DoorDash, Deliveroo) only open their APIs to approved partners, so the demo uses two made-up apps, **QuickBite** and **Hopper Eats**, and the device says so. Once connected, each one sends an order every `DELIVERY_EVERY_SECONDS` (90 by default) using only what's on the menu right now, already paid in the app. Orders left waiting for two minutes get a spoken reminder. *"Pause the delivery apps"* stops them.
 
+## WhatsApp
+
+*"Connect WhatsApp"* lets customers order by message. The crew reads each message with Muse Spark: questions get a short answer, orders go into the queue (pay at pickup), sold-out items are politely refused, and the customer is messaged when the order is accepted, ready or cancelled.
+
+Without WhatsApp keys it's simulated, and `/whatsapp` plays the customer's phone. To use a real WhatsApp Business number, set the `WHATSAPP_*` values in `.env.local` and point the WhatsApp webhook at `https://<public address>/api/whatsapp/webhook` (through a tunnel when running locally), using your `WHATSAPP_VERIFY_TOKEN`. With `WHATSAPP_APP_SECRET` set, webhook calls are signature-checked.
+
 ## ReSpeaker XVF3800
 
 Plug the XVF3800 into the Mac or PC over USB. It shows up as a normal mic, and the Counter page picks it automatically (or choose it from the mic menu). The XVF3800 does echo cancellation, beamforming and noise suppression in hardware, so the browser's own processing is turned off. For spoken replies and call-outs, set the system audio output to the XVF3800's speaker jack.
 
-## Demo script (≈3 min)
+## Demo script (≈4 min)
 
 **Unbox and set up** (start from **Reset to a new device** on `/device`)
 
@@ -61,11 +68,12 @@ Plug the XVF3800 into the Mac or PC over USB. It shows up as a normal mic, and t
 **Run the shop**
 
 5. *"Put us on the delivery apps."* → QuickBite and Hopper Eats light up on the device, and their orders start arriving and are called out. *"Accept the QuickBite order, ten minutes."*
-6. Hold Space: *"Two oat lattes and a butter croissant for table 4, card."* → the order appears and a Stripe QR pops up → pay with the test card → *"Order 2 paid by card."*
-7. *"We're out of oat milk."* → Oat Latte disappears from the store and the delivery apps, and an oat milk reorder waits for approval → Approve.
-8. `/stock` → **Count the case** → SAM outlines each pastry, and empty trays go sold out.
-9. `/money` → snap a supplier invoice → expense logged, stock topped up → **Close the day** → spoken briefing.
-10. `/promo` → photo of a croissant → poster and caption, which also shows on the store as today's special.
+6. *"Connect WhatsApp."* → on `/whatsapp`, message *"Hi! Two oat lattes and a croissant for pickup?"* → the order lands in the queue and the customer gets a confirmation. *"Accept the WhatsApp order, five minutes"* → the customer is told; mark it **Ready** → *"Order is ready!"*
+7. Hold Space: *"Two oat lattes and a butter croissant for table 4, card."* → the order appears and a Stripe QR pops up → pay with the test card → *"Order … paid by card."*
+8. *"We're out of oat milk."* → Oat Latte disappears from the store and the delivery apps, and an oat milk reorder waits for approval → Approve.
+9. `/stock` → **Count the case** → SAM outlines each pastry, and empty trays go sold out.
+10. `/money` → snap a supplier invoice → expense logged, stock topped up → **Close the day** → spoken briefing.
+11. `/promo` → photo of a croissant → poster and caption, which also shows on the store as today's special.
 
 ## Stack
 
