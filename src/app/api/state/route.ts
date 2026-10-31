@@ -1,14 +1,18 @@
 import { syncCheckout, stripeClient } from "@/lib/payments";
 import { db } from "@/lib/db";
 import { getShop } from "@/lib/shop";
+import { deliveryTick, listConnections } from "@/lib/delivery";
 import { daySummary, listActivity, listApprovals, listMenu, listStock, listTodayExpenses, listTodayOrders } from "@/lib/store";
 
 export async function GET() {
+  // Polling doubles as the clock for the simulated delivery apps.
+  deliveryTick();
   // Card/online payments are confirmed by polling Stripe for any order still pending.
   const pending = listTodayOrders().filter((o) => o.payment_status === "pending" && o.stripe_session_id);
   await Promise.allSettled(pending.map((o) => syncCheckout(o.stripe_session_id!)));
   return Response.json({
     shop: getShop(),
+    connections: listConnections(),
     // The Setup agent's last line, so a freshly reset device knows what to say first.
     lastSetupLine:
       (db().prepare("SELECT text FROM conversation WHERE role = 'assistant' ORDER BY id DESC LIMIT 1").get() as

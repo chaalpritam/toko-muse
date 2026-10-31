@@ -7,6 +7,7 @@ import { api, speak, useCafeState, useCallOuts, type CafeState } from "@/lib/cli
 import { usePushToTalk, type Turn } from "@/lib/client/push-to-talk";
 import { money } from "@/lib/format";
 import { sourceOf } from "@/lib/channels";
+import { DELIVERY_APPS } from "@/lib/delivery-apps";
 
 // What the café's counter device shows: one orb you hold to talk to, and what it's doing.
 // On a new device it walks the owner through setting up the shop; once live it runs the counter.
@@ -215,6 +216,7 @@ function LivePanel({ state }: { state: CafeState }) {
         <Stat label="Taken today" value={money(state.summary.revenue_cents)} />
         <Stat label="Needs OK" value={`${state.approvals.length}`} />
       </div>
+      <Connections state={state} />
       {waiting.length > 0 && (
         <div>
           <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[#b3a291]">Waiting for you</h3>
@@ -233,6 +235,31 @@ function LivePanel({ state }: { state: CafeState }) {
       <Link href="/" className="text-center text-sm text-[#b3a291] underline">
         Open the back office
       </Link>
+    </div>
+  );
+}
+
+// Where the café is selling. Delivery apps are simulated; WhatsApp is still to come.
+function Connections({ state }: { state: CafeState }) {
+  const apps = DELIVERY_APPS.map((a) => ({ ...a, on: state.connections.some((c) => c.id === a.id) }));
+  const anyOn = apps.some((a) => a.on);
+  return (
+    <div>
+      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[#b3a291]">Selling on</h3>
+      <ul className="flex flex-wrap gap-1.5 text-xs">
+        <li className="rounded-full bg-[#1c3326] px-2.5 py-1 text-[#6fc490]">● Website</li>
+        {apps.map((a) => (
+          <li
+            key={a.id}
+            className={`rounded-full px-2.5 py-1 ${a.on ? "bg-[#1c3326] text-[#6fc490]" : "bg-[#211a14] text-[#7a6a5c]"}`}
+          >
+            {a.on ? "●" : "○"} {a.name}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-[#7a6a5c]">
+        {anyOn ? "Delivery apps are simulated for the demo." : "Say “put us on the delivery apps”"}
+      </p>
     </div>
   );
 }

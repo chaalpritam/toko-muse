@@ -103,6 +103,13 @@ CREATE TABLE IF NOT EXISTS expenses (
   note TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS connections (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  connected_at TEXT NOT NULL DEFAULT (datetime('now')),
+  next_order_at TEXT
+);
 CREATE TABLE IF NOT EXISTS conversation (
   id INTEGER PRIMARY KEY,
   role TEXT NOT NULL,
@@ -209,7 +216,7 @@ export function resetDb(mode: "blank" | "sample") {
   d.exec(`BEGIN;
     DELETE FROM order_items; DELETE FROM orders; DELETE FROM recipes; DELETE FROM menu_items;
     DELETE FROM stock_items; DELETE FROM suppliers; DELETE FROM approvals; DELETE FROM activity;
-    DELETE FROM expenses; DELETE FROM promos; DELETE FROM conversation; DELETE FROM shop;
+    DELETE FROM expenses; DELETE FROM promos; DELETE FROM conversation; DELETE FROM connections; DELETE FROM shop;
     COMMIT;`);
   if (mode === "sample") {
     seed(d);

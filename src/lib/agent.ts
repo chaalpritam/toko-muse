@@ -3,6 +3,7 @@ import { MODELS, muse } from "./muse";
 import { money } from "./format";
 import { startCheckout } from "./payments";
 import { CHANNEL_LABEL, sourceOf, type Channel } from "./channels";
+import { connectDeliveryApps, connectedDeliveryApps, deliveryNote, disconnectDeliveryApps } from "./delivery";
 import {
   createApproval,
   createOrder,
@@ -156,6 +157,22 @@ const tools: OpenAI.Chat.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "connect_delivery_apps",
+      description: "Put the café on the delivery apps: publishes the menu and starts taking their orders.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "disconnect_delivery_apps",
+      description: "Stop taking delivery-app orders, e.g. when the owner is swamped or closing.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "day_summary",
       description: "Today's numbers: orders, revenue by payment method, unpaid orders, expenses, top sellers, low stock.",
       parameters: { type: "object", properties: {} },
@@ -258,7 +275,10 @@ async function runTool(name: string, args: Record<string, unknown>, ctx: Ctx): P
       if (!m) return { agent: "Stock", result: `No menu item like "${args.item}".` };
       setAvailable(m.id, Boolean(args.available));
       log("Stock", `${m.name} ${args.available ? "back on" : "taken off"} the menu.`);
-      return { agent: "Stock", result: `${m.name} is ${args.available ? "back on" : "off"} the menu everywhere.` };
+      return {
+        agent: "Stock",
+        result: `${m.name} is ${args.available ? "back on" : "off"} the menu everywhere.${deliveryNote()}`,
+      };
     }
     case "ingredient_out": {
       const s = findStockItem(String(args.ingredient));
@@ -268,7 +288,7 @@ async function runTool(name: string, args: Record<string, unknown>, ctx: Ctx): P
       draftSupplierOrder({ ...s, qty: 0 }, s.reorder_qty, "Suppliers");
       return {
         agent: "Stock",
-        result: `Out of ${s.name}: ${off.join(", ") || "no items"} marked sold out. Reorder of ${s.reorder_qty} ${s.unit} drafted for approval.`,
+        result: `Out of ${s.name}: ${off.join(", ") || "no items"} marked sold out.${off.length ? deliveryNote() : ""} Reorder of ${s.reorder_qty} ${s.unit} drafted for approval.`,
       };
     }
     case "restock": {
@@ -283,6 +303,23 @@ async function runTool(name: string, args: Record<string, unknown>, ctx: Ctx): P
       if (!s) return { agent: "Suppliers", result: `I don't track "${args.ingredient}".` };
       draftSupplierOrder(s, Number(args.qty ?? s.reorder_qty), "Suppliers");
       return { agent: "Suppliers", result: `Reorder for ${s.name} drafted and waiting for your approval.` };
+    }
+    case "connect_delivery_apps": {
+      const { added, items } = connectDeliveryApps();
+      const all = connectedDeliveryApps().map((c) => c.name).join(" and ");
+      return {
+        agent: "Orders",
+        result: added.length
+          ? `Connected to ${all}. Menu of ${items} items is live there; their orders will come into the queue, already paid.`
+          : `Already connected to ${all}.`,
+      };
+    }
+    case "disconnect_delivery_apps": {
+      const names = disconnectDeliveryApps();
+      return {
+        agent: "Orders",
+        result: names.length ? `Paused ${names.join(" and ")}; no more delivery orders.` : "Not connected to any delivery apps.",
+      };
     }
     case "day_summary":
       return { agent: "Books", result: JSON.stringify(daySummary()) };
@@ -308,7 +345,8 @@ function snapshot() {
     .filter((s) => s.qty <= s.par)
     .map((s) => `${s.name} ${s.qty}${s.unit}`)
     .join(", ");
-  return `MENU: ${menu}\nOPEN ORDERS:\n${open || "none"}\nLOW STOCK: ${low || "none"}`;
+  const apps = connectedDeliveryApps().map((c) => c.name).join(", ");
+  return `DELIVERY APPS: ${apps || "not connected"}\nMENU: ${menu}\nOPEN ORDERS:\n${open || "none"}\nLOW STOCK: ${low || "none"}`;
 }
 
 const SYSTEM = `You are the back-office crew of a small café run by one owner. You are the Manager: the owner talks to you hands-free while making coffee, and you act through your team's tools (Orders, Payments, Stock, Suppliers, Books).

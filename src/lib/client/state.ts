@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Activity, Approval, Expense, MenuItem, Order, StockItem, daySummary } from "@/lib/store";
 import type { Shop } from "@/lib/shop";
+import type { Connection } from "@/lib/delivery";
 import { sourceOf } from "@/lib/channels";
 
 export interface CafeState {
   shop: Shop;
+  connections: Connection[];
   lastSetupLine: string | null;
   orders: Order[];
   approvals: Approval[];
@@ -53,9 +55,13 @@ export function speak(text: string, onEnd?: () => void) {
   window.speechSynthesis.speak(u);
 }
 
-// Call-outs: speak new online orders and completed card payments, like a kitchen printer that talks.
+// Delivery apps cancel orders nobody accepts, so the crew nudges the owner after this long.
+const REMIND_AFTER_MS = 2 * 60 * 1000;
+
+// Call-outs: speak new orders and completed card payments, like a kitchen printer that talks.
 export function useCallOuts(state: CafeState | null, muted: boolean) {
   const seen = useRef<Map<number, string> | null>(null);
+  const reminded = useRef(new Set<number>());
   useEffect(() => {
     if (!state) return;
     const prev = seen.current;
@@ -74,6 +80,14 @@ export function useCallOuts(state: CafeState | null, muted: boolean) {
       }
     }
     seen.current = next;
+    if (muted) return;
+    for (const o of state.orders) {
+      const waited = Date.now() - Date.parse(o.created_at.replace(" ", "T") + "Z");
+      if (o.channel === "delivery" && o.status === "new" && waited > REMIND_AFTER_MS && !reminded.current.has(o.id)) {
+        reminded.current.add(o.id);
+        speak(`${sourceOf(o)} order ${o.number} is still waiting for you to accept it.`);
+      }
+    }
   }, [state, muted]);
 }
 
