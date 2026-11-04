@@ -44,7 +44,7 @@ export default async function Landing() {
   const video = process.env.NEXT_PUBLIC_DEMO_VIDEO_URL;
 
   return (
-    <div className="theme-light min-h-screen">
+    <div className="min-h-screen">
       <header className="mx-auto flex max-w-[1240px] items-center gap-6 px-5 py-5 sm:px-8">
         <Link href="/" className="font-display text-2xl font-semibold tracking-tight">
           Toko Muse
@@ -117,17 +117,17 @@ export default async function Landing() {
             <p className="mt-4 max-w-2xl text-lg text-muted">
               There’s no setup form. The owner unboxes the device and talks to it.
             </p>
+            <p className="mt-2 text-sm text-muted">Screens from the running demo, with its sample café, Muse Café.</p>
             <div className="mt-14 flex flex-col gap-20">
               <Step
-                n={1}
                 title="Tell Toko about your café"
                 body="Tap the screen and Toko asks, one question at a time: the café’s name, what you sell and for how much, what goes into each drink, your hours and address. The menu and stock build up as you answer."
-                say="We sell oat lattes for five fifty and butter croissants for three seventy-five."
+                say="We sell oat lattes for five twenty-five and butter croissants for three seventy-five."
                 shot={deviceShot}
-                alt="The Toko device screen: the orb, and a panel showing the live store's QR code, today's takings and orders waiting."
+                portrait
+                alt="The Toko device's store panel: the live store's QR code, today's takings, the channels it sells on and orders waiting."
               />
               <Step
-                n={2}
                 title="Your store goes live"
                 body="Say “launch the store” and Setup writes the café’s front page and online menu. A QR code appears on the device for customers to scan. Sold-out items drop off the menu by themselves."
                 say="Launch the store."
@@ -136,7 +136,6 @@ export default async function Landing() {
                 flip
               />
               <Step
-                n={3}
                 title="Run the counter hands-free"
                 body="Every order lands in one queue: the counter, the website, WhatsApp and delivery apps. New ones are called out loud. Accept, ring up, sell out and reorder by voice. Anything that spends money or messages someone outside the café waits for your OK."
                 say="Accept the WhatsApp order, five minutes."
@@ -210,7 +209,8 @@ export default async function Landing() {
             <h2 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">Try it</h2>
             <p className="mt-4 max-w-2xl text-lg text-muted">
               Hold the orb or the Space bar on the device and talk. A sample café is loaded; to start from an empty
-              box, open <span className="text-foreground">Device ⋯ → Reset to a new device</span>.
+              box, open the Device menu on the device and choose{" "}
+              <span className="text-foreground">Reset to a new device</span>.
             </p>
             {video && (
               <a href={video} target="_blank" rel="noreferrer" className="btn mt-8 px-5 py-3 text-base">
@@ -241,27 +241,26 @@ export default async function Landing() {
 }
 
 function Step({
-  n,
   title,
   body,
   say,
   shot,
   alt,
   flip,
+  portrait,
 }: {
-  n: number;
   title: string;
   body: string;
   say: string;
   shot: Parameters<typeof Image>[0]["src"];
   alt: string;
   flip?: boolean;
+  portrait?: boolean;
 }) {
   return (
-    <article className="grid items-center gap-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:gap-14">
+    <article className="grid items-center gap-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-12">
       <div className={flip ? "lg:order-2" : ""}>
-        <p className="text-sm text-muted">Step {n}</p>
-        <h3 className="mt-1 font-display text-3xl font-semibold tracking-tight">{title}</h3>
+        <h3 className="font-display text-3xl font-semibold tracking-tight">{title}</h3>
         <p className="mt-4 leading-relaxed text-muted">{body}</p>
         <p className="mt-5 border-l border-line pl-4 font-display text-xl leading-snug">
           <span className="text-accent">“</span>
@@ -272,8 +271,8 @@ function Step({
       <Image
         src={shot}
         alt={alt}
-        sizes="(min-width: 1024px) 720px, 100vw"
-        className="max-h-[560px] w-full rounded-xl border border-line object-cover object-top shadow-[0_24px_48px_-16px_rgb(60_40_20/0.28)]"
+        sizes="(min-width: 1024px) 780px, 100vw"
+        className={`${portrait ? "mx-auto max-h-[640px] w-auto" : "max-h-[620px] w-full object-cover object-top"} rounded-xl border border-line shadow-[0_24px_48px_-16px_rgb(60_40_20/0.28)]`}
       />
     </article>
   );

@@ -8,8 +8,8 @@ const EXCHANGES = [
   {
     said: "Two oat lattes and a butter croissant for table 4, card.",
     did: [
-      { agent: "Orders", text: "order rung up for table 4" },
-      { agent: "Payments", text: "Stripe QR on the counter screen" },
+      { agent: "Orders", text: "order #12 rung up for table 4" },
+      { agent: "Payments", text: "Stripe QR for $14.25 on the counter screen" },
     ],
   },
   {
@@ -21,7 +21,7 @@ const EXCHANGES = [
   },
   {
     said: "Accept the QuickBite order, ten minutes.",
-    did: [{ agent: "Orders", text: "accepted, ready time promised to the customer" }],
+    did: [{ agent: "Orders", text: "QuickBite #14 accepted, ready by 10:42" }],
   },
 ];
 
@@ -107,18 +107,18 @@ export function Shift() {
           {EXCHANGES.map((e, i) => (
             <li key={e.said}>
               <p className="font-display text-xl leading-snug sm:text-2xl">
-                <span className={`text-accent transition-opacity ${words[i] ? "opacity-100" : "opacity-0"} motion-reduce:opacity-100`}>“</span>
+                <span className={`text-accent transition-opacity duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${words[i] ? "opacity-100" : "opacity-0"} motion-reduce:opacity-100`}>“</span>
                 {e.said.split(" ").map((w, j, all) => (
                   <span
                     key={j}
-                    className={`transition-opacity duration-200 ${j < words[i] ? "opacity-100" : "opacity-0"} motion-reduce:opacity-100`}
+                    className={`transition-opacity duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${j < words[i] ? "opacity-100" : "opacity-0"} motion-reduce:opacity-100`}
                   >
                     {w}
                     {j < all.length - 1 ? " " : ""}
                   </span>
                 ))}
                 <span
-                  className={`text-accent transition-opacity ${words[i] ? "opacity-100" : "opacity-0"} motion-reduce:opacity-100`}
+                  className={`text-accent transition-opacity duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${words[i] ? "opacity-100" : "opacity-0"} motion-reduce:opacity-100`}
                 >
                   ”
                 </span>
@@ -127,7 +127,7 @@ export function Shift() {
                 {e.did.map((d, j) => (
                   <li
                     key={d.text}
-                    className={`flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-sm text-muted transition-[opacity,transform] duration-300 ease-out ${
+                    className={`flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-sm text-muted transition-[opacity,transform] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
                       j < done[i] ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
                     } motion-reduce:translate-y-0 motion-reduce:opacity-100`}
                   >
