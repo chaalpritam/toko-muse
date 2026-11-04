@@ -238,7 +238,7 @@ function LivePanel({ state }: { state: CafeState }) {
           <p className="mt-2 text-xs text-[#8a7a6c]">Say “accept the {sourceOf(waiting[0])} order, ten minutes”</p>
         </div>
       )}
-      <Link href="/" className="text-center text-sm text-[#b3a291] underline">
+      <Link href="/counter" className="text-center text-sm text-[#b3a291] underline">
         Open the back office
       </Link>
     </div>

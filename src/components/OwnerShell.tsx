@@ -7,7 +7,7 @@ import { money } from "@/lib/format";
 import { Icon } from "@/components/Icon";
 
 const NAV = [
-  { href: "/", label: "Counter" },
+  { href: "/counter", label: "Counter" },
   { href: "/stock", label: "Stock" },
   { href: "/money", label: "Money" },
   { href: "/promo", label: "Promo" },
