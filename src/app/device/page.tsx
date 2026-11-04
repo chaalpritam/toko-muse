@@ -61,14 +61,14 @@ export default function Device() {
   }[orb];
 
   return (
-    <main className="fixed inset-0 flex flex-col overflow-y-auto bg-[#0f0c0a] text-[#f3ebe1]" onPointerDown={wake}>
+    <main className="fixed inset-0 flex flex-col overflow-y-auto bg-background text-foreground" onPointerDown={wake}>
       <header className="flex items-center gap-3 px-5 py-4">
         <span className="font-display text-xl font-semibold tracking-tight">toko</span>
-        {shop?.name && <span className="truncate text-sm text-[#b3a291]">{shop.name}</span>}
+        {shop?.name && <span className="truncate text-sm text-muted">{shop.name}</span>}
         <StageChip state={state} />
         <div className="ml-auto flex items-center gap-2">
           <select
-            className="max-w-[160px] truncate rounded-md border border-[#3a2f26] bg-[#1a1511] px-2 py-1 text-xs text-[#b3a291]"
+            className="max-w-[160px] truncate rounded-md border border-line bg-surface px-2 py-1 text-xs text-muted"
             value={ptt.deviceId}
             onChange={(e) => ptt.setDeviceId(e.target.value)}
             onFocus={() => void ptt.loadDevices()}
@@ -99,15 +99,15 @@ export default function Device() {
             onPointerUp={() => void ptt.stop()}
             onPointerLeave={() => void ptt.stop()}
           />
-          <p className="text-sm text-[#b3a291]">{awake ? status : "Tap anywhere to wake Toko"}</p>
+          <p className="text-sm text-muted">{awake ? status : "Tap anywhere to wake Toko"}</p>
           <div className="min-h-[7rem] max-w-2xl">
-            {turn?.you && <p className="mb-2 text-[#b3a291]">“{turn.you}”</p>}
+            {turn?.you && <p className="mb-2 text-muted">“{turn.you}”</p>}
             {turn?.reply && <p className="font-display text-2xl leading-snug text-balance md:text-3xl">{turn.reply}</p>}
-            {turn?.error && <p className="text-lg text-[#f2877d]">{turn.error}</p>}
+            {turn?.error && <p className="text-lg text-danger">{turn.error}</p>}
             {turn?.actions && turn.actions.length > 0 && (
               <ul className="mt-3 flex flex-wrap justify-center gap-1.5">
                 {turn.actions.map((a, i) => (
-                  <li key={i} className="rounded-full bg-[#211a14] px-2.5 py-0.5 text-xs text-[#b3a291]">
+                  <li key={i} className="rounded-full bg-sunken px-2.5 py-0.5 text-xs text-muted">
                     {a.agent} · {a.tool.replaceAll("_", " ")}
                   </li>
                 ))}
@@ -125,13 +125,13 @@ export default function Device() {
           >
             <input
               aria-label="Type to Toko"
-              className="min-w-0 flex-1 rounded-lg border border-[#3a2f26] bg-[#1a1511] px-3 py-2 text-sm transition-colors placeholder:text-[#8a7a6c] focus-visible:border-[#e0814f] focus-visible:outline-none"
+              className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm transition-colors placeholder:text-muted focus-visible:border-accent focus-visible:outline-none"
               placeholder="Or type to Toko"
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
             <button
-              className="flex items-center justify-center rounded-lg border border-[#3a2f26] px-3 text-[#b3a291] transition-colors hover:bg-[#211a14] hover:text-[#f3ebe1] disabled:opacity-40"
+              className="flex items-center justify-center rounded-lg border border-line px-3 text-muted transition-colors hover:bg-sunken hover:text-foreground disabled:opacity-40"
               disabled={!awake || !text.trim()}
               aria-label="Send"
             >
@@ -151,7 +151,7 @@ function StageChip({ state }: { state: CafeState | null }) {
   const label = { new: "New device", setup: "Setting up", live: "Live" }[state.shop.stage];
   const live = state.shop.stage === "live";
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs ${live ? "bg-[#1c3326] text-[#6fc490]" : "bg-[#3a2d12] text-[#e5b04a]"}`}>
+    <span className={`rounded-full px-2 py-0.5 text-xs ${live ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn"}`}>
       {label}
     </span>
   );
@@ -167,31 +167,31 @@ function SetupPanel({ state }: { state: CafeState }) {
     { label: "Store live", done: false, detail: "say “launch the store”" },
   ];
   return (
-    <div className="rounded-2xl border border-[#3a2f26] bg-[#17120e] p-5">
+    <div className="rounded-2xl border border-line bg-surface p-5">
       <h2 className="mb-4 font-display text-xl font-semibold">Setting up your shop</h2>
       <ol className="flex flex-col gap-3">
         {steps.map((s) => (
           <li key={s.label} className="flex items-start gap-3">
             <span
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${
-                s.done ? "bg-[#6fc490] text-[#0f0c0a]" : "border border-[#3a2f26]"
+                s.done ? "bg-ok text-white" : "border border-line"
               }`}
             >
               {s.done && <Icon name="check" size={12} />}
             </span>
             <div className="min-w-0">
-              <div className={s.done ? "" : "text-[#b3a291]"}>{s.label}</div>
-              {s.detail && <div className="truncate text-sm text-[#8a7a6c]">{s.detail}</div>}
+              <div className={s.done ? "" : "text-muted"}>{s.label}</div>
+              {s.detail && <div className="truncate text-sm text-muted">{s.detail}</div>}
             </div>
           </li>
         ))}
       </ol>
       {menu.length > 0 && (
-        <ul className="mt-5 max-h-64 overflow-y-auto border-t border-[#3a2f26] pt-3 text-sm">
+        <ul className="mt-5 max-h-64 overflow-y-auto border-t border-line pt-3 text-sm">
           {menu.map((m) => (
             <li key={m.id} className="flex justify-between gap-3 py-1">
               <span className="truncate">{m.name}</span>
-              <span className="tabular-nums text-[#b3a291]">{money(m.price_cents)}</span>
+              <span className="tabular-nums text-muted">{money(m.price_cents)}</span>
             </li>
           ))}
         </ul>
@@ -211,10 +211,10 @@ function LivePanel({ state }: { state: CafeState }) {
   const open = state.orders.filter((o) => o.status !== "done" && o.status !== "cancelled");
   const waiting = state.orders.filter((o) => o.status === "new").reverse();
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-[#3a2f26] bg-[#17120e] p-5">
+    <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5">
       <h2 className="font-display text-xl font-semibold">Your store is live</h2>
       {qr && <img src={qr} alt={`QR code for ${url}`} className="mx-auto h-48 w-48 rounded-lg bg-white p-2" />}
-      <a href={url} target="_blank" rel="noreferrer" className="break-all text-center text-sm text-[#e0814f] underline decoration-[#e0814f]/40 hover:decoration-[#e0814f]">
+      <a href={url} target="_blank" rel="noreferrer" className="break-all text-center text-sm text-accent underline decoration-accent/40 hover:decoration-accent">
         {url}
       </a>
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -225,20 +225,20 @@ function LivePanel({ state }: { state: CafeState }) {
       <Connections state={state} />
       {waiting.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-medium text-[#b3a291]">Waiting for you</h3>
+          <h3 className="mb-2 text-sm font-medium text-muted">Waiting for you</h3>
           <ul className="flex flex-col gap-1.5 text-sm">
             {waiting.slice(0, 5).map((o) => (
-              <li key={o.id} className="flex items-center gap-2 rounded-lg bg-[#211a14] px-3 py-2">
+              <li key={o.id} className="flex items-center gap-2 rounded-lg bg-sunken px-3 py-2">
                 <span className="font-semibold tabular-nums">#{o.number}</span>
-                <span className="rounded-full bg-[#3a2f26] px-2 text-xs">{sourceOf(o)}</span>
-                <span className="min-w-0 truncate text-[#b3a291]">{o.items.map((i) => `${i.qty} ${i.name}`).join(", ")}</span>
+                <span className="rounded-full bg-line px-2 text-xs">{sourceOf(o)}</span>
+                <span className="min-w-0 truncate text-muted">{o.items.map((i) => `${i.qty} ${i.name}`).join(", ")}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-[#8a7a6c]">Say “accept the {sourceOf(waiting[0])} order, ten minutes”</p>
+          <p className="mt-2 text-xs text-muted">Say “accept the {sourceOf(waiting[0])} order, ten minutes”</p>
         </div>
       )}
-      <Link href="/counter" className="text-center text-sm text-[#b3a291] underline">
+      <Link href="/counter" className="text-center text-sm text-muted underline">
         Open the back office
       </Link>
     </div>
@@ -256,23 +256,23 @@ function Connections({ state }: { state: CafeState }) {
       : "Delivery apps are simulated for the demo.";
   return (
     <div>
-      <h3 className="mb-2 text-sm font-medium text-[#b3a291]">Selling on</h3>
+      <h3 className="mb-2 text-sm font-medium text-muted">Selling on</h3>
       <ul className="flex flex-wrap gap-1.5 text-xs">
-        <li className="flex items-center gap-1.5 rounded-full bg-[#1c3326] px-2.5 py-1 text-[#6fc490]">
+        <li className="flex items-center gap-1.5 rounded-full bg-ok-soft px-2.5 py-1 text-ok">
           <Dot on />
           Website
         </li>
         {apps.map((a) => (
           <li
             key={a.id}
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${a.on ? "bg-[#1c3326] text-[#6fc490]" : "bg-[#211a14] text-[#8a7a6c]"}`}
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${a.on ? "bg-ok-soft text-ok" : "bg-sunken text-muted"}`}
           >
             <Dot on={a.on} />
             {a.name}
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-[#8a7a6c]">
+      <p className="mt-2 text-xs text-muted">
         {hint}
       </p>
     </div>
@@ -285,9 +285,9 @@ function Dot({ on }: { on?: boolean }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-[#211a14] px-2 py-2.5">
+    <div className="rounded-lg bg-sunken px-2 py-2.5">
       <div className="text-lg font-semibold tabular-nums">{value}</div>
-      <div className="text-xs text-[#8a7a6c]">{label}</div>
+      <div className="text-xs text-muted">{label}</div>
     </div>
   );
 }
@@ -305,7 +305,7 @@ function Settings({ onReset }: { onReset: (mode: "blank" | "sample") => Promise<
   return (
     <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
       <button
-        className="flex items-center gap-1.5 rounded-md border border-[#3a2f26] px-2 py-1 text-xs text-[#b3a291] transition-colors hover:bg-[#211a14]"
+        className="flex items-center gap-1.5 rounded-md border border-line px-2 py-1 text-xs text-muted transition-colors hover:bg-sunken"
         onClick={() => {
           setOpen((o) => !o);
           setConfirm(null);
@@ -315,11 +315,11 @@ function Settings({ onReset }: { onReset: (mode: "blank" | "sample") => Promise<
         Device <Icon name="more" size={14} />
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-2 flex w-60 flex-col gap-1 rounded-xl border border-[#3a2f26] bg-[#17120e] p-2 text-sm">
-          <button className="rounded-lg px-3 py-2 text-left hover:bg-[#211a14]" onClick={() => void pick("blank")}>
+        <div className="absolute right-0 z-10 mt-2 flex w-60 flex-col gap-1 rounded-xl border border-line bg-surface p-2 text-sm">
+          <button className="rounded-lg px-3 py-2 text-left hover:bg-sunken" onClick={() => void pick("blank")}>
             {confirm === "blank" ? "Tap again: wipe everything" : "Reset to a new device"}
           </button>
-          <button className="rounded-lg px-3 py-2 text-left hover:bg-[#211a14]" onClick={() => void pick("sample")}>
+          <button className="rounded-lg px-3 py-2 text-left hover:bg-sunken" onClick={() => void pick("sample")}>
             {confirm === "sample" ? "Tap again: replace with sample" : "Load the sample café"}
           </button>
         </div>
