@@ -8,6 +8,7 @@ import { Shift } from "@/components/landing/Shift";
 import counterShot from "../../public/landing/counter.webp";
 import deviceShot from "../../public/landing/device.webp";
 import storeShot from "../../public/landing/store.webp";
+import whatsappShot from "../../public/landing/whatsapp.webp";
 
 export const metadata: Metadata = {
   title: "Toko Muse: a counter device that runs a one-person café",
@@ -141,6 +142,15 @@ export default async function Landing() {
                 say="Accept the WhatsApp order, five minutes."
                 shot={counterShot}
                 alt="The back-office order board: website, WhatsApp and QuickBite orders moving through New, Making and Ready."
+              />
+              <Step
+                title="Customers can just message you"
+                body="Say “connect WhatsApp” and customers order by message. The crew reads each one with Muse Spark: questions get a short answer, orders go into the queue to pay at pickup, sold-out items are politely refused, and the customer hears back when their order is accepted and ready. In the demo, WhatsApp is simulated and /whatsapp plays the customer’s phone."
+                say="Connect WhatsApp."
+                shot={whatsappShot}
+                alt="A customer's WhatsApp chat with Muse Café: she orders two oat lattes and a butter croissant, the café confirms order #5 for $14.25, then says it's being made."
+                portrait
+                flip
               />
             </div>
           </div>
