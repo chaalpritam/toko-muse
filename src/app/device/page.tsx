@@ -8,6 +8,7 @@ import { usePushToTalk, type Turn } from "@/lib/client/push-to-talk";
 import { money } from "@/lib/format";
 import { sourceOf } from "@/lib/channels";
 import { DELIVERY_APPS } from "@/lib/delivery-apps";
+import { Icon } from "@/components/Icon";
 
 // What the café's counter device shows: one orb you hold to talk to, and what it's doing.
 // On a new device it walks the owner through setting up the shop; once live it runs the counter.
@@ -62,7 +63,7 @@ export default function Device() {
   return (
     <main className="fixed inset-0 flex flex-col overflow-y-auto bg-[#0f0c0a] text-[#f3ebe1]" onPointerDown={wake}>
       <header className="flex items-center gap-3 px-5 py-4">
-        <span className="text-lg font-semibold tracking-tight">toko</span>
+        <span className="font-display text-xl font-semibold tracking-tight">toko</span>
         {shop?.name && <span className="truncate text-sm text-[#b3a291]">{shop.name}</span>}
         <StageChip state={state} />
         <div className="ml-auto flex items-center gap-2">
@@ -101,8 +102,8 @@ export default function Device() {
           <p className="text-sm text-[#b3a291]">{awake ? status : "Tap anywhere to wake Toko"}</p>
           <div className="min-h-[7rem] max-w-2xl">
             {turn?.you && <p className="mb-2 text-[#b3a291]">“{turn.you}”</p>}
-            {turn?.reply && <p className="text-2xl font-medium leading-snug text-balance md:text-3xl">{turn.reply}</p>}
-            {turn?.error && <p className="text-lg text-[#e0814f]">{turn.error}</p>}
+            {turn?.reply && <p className="font-display text-2xl leading-snug text-balance md:text-3xl">{turn.reply}</p>}
+            {turn?.error && <p className="text-lg text-[#f2877d]">{turn.error}</p>}
             {turn?.actions && turn.actions.length > 0 && (
               <ul className="mt-3 flex flex-wrap justify-center gap-1.5">
                 {turn.actions.map((a, i) => (
@@ -123,13 +124,18 @@ export default function Device() {
             }}
           >
             <input
-              className="min-w-0 flex-1 rounded-lg border border-[#3a2f26] bg-[#1a1511] px-3 py-2 text-sm placeholder:text-[#7a6a5c]"
+              aria-label="Type to Toko"
+              className="min-w-0 flex-1 rounded-lg border border-[#3a2f26] bg-[#1a1511] px-3 py-2 text-sm transition-colors placeholder:text-[#8a7a6c] focus-visible:border-[#e0814f] focus-visible:outline-none"
               placeholder="Or type to Toko"
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
-            <button className="rounded-lg border border-[#3a2f26] px-3 text-sm text-[#b3a291]" disabled={!awake}>
-              Send
+            <button
+              className="flex items-center justify-center rounded-lg border border-[#3a2f26] px-3 text-[#b3a291] transition-colors hover:bg-[#211a14] hover:text-[#f3ebe1] disabled:opacity-40"
+              disabled={!awake || !text.trim()}
+              aria-label="Send"
+            >
+              <Icon name="send" size={15} />
             </button>
           </form>
         </section>
@@ -162,7 +168,7 @@ function SetupPanel({ state }: { state: CafeState }) {
   ];
   return (
     <div className="rounded-2xl border border-[#3a2f26] bg-[#17120e] p-5">
-      <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-[#b3a291]">Setting up your shop</h2>
+      <h2 className="mb-4 font-display text-xl font-semibold">Setting up your shop</h2>
       <ol className="flex flex-col gap-3">
         {steps.map((s) => (
           <li key={s.label} className="flex items-start gap-3">
@@ -171,11 +177,11 @@ function SetupPanel({ state }: { state: CafeState }) {
                 s.done ? "bg-[#6fc490] text-[#0f0c0a]" : "border border-[#3a2f26]"
               }`}
             >
-              {s.done ? "✓" : ""}
+              {s.done && <Icon name="check" size={12} />}
             </span>
             <div className="min-w-0">
               <div className={s.done ? "" : "text-[#b3a291]"}>{s.label}</div>
-              {s.detail && <div className="truncate text-sm text-[#7a6a5c]">{s.detail}</div>}
+              {s.detail && <div className="truncate text-sm text-[#8a7a6c]">{s.detail}</div>}
             </div>
           </li>
         ))}
@@ -206,9 +212,9 @@ function LivePanel({ state }: { state: CafeState }) {
   const waiting = state.orders.filter((o) => o.status === "new").reverse();
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-[#3a2f26] bg-[#17120e] p-5">
-      <h2 className="text-sm font-medium uppercase tracking-wide text-[#b3a291]">Your store is live</h2>
+      <h2 className="font-display text-xl font-semibold">Your store is live</h2>
       {qr && <img src={qr} alt={`QR code for ${url}`} className="mx-auto h-48 w-48 rounded-lg bg-white p-2" />}
-      <a href={url} target="_blank" rel="noreferrer" className="break-all text-center text-sm text-[#e0814f] underline">
+      <a href={url} target="_blank" rel="noreferrer" className="break-all text-center text-sm text-[#e0814f] underline decoration-[#e0814f]/40 hover:decoration-[#e0814f]">
         {url}
       </a>
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -219,7 +225,7 @@ function LivePanel({ state }: { state: CafeState }) {
       <Connections state={state} />
       {waiting.length > 0 && (
         <div>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[#b3a291]">Waiting for you</h3>
+          <h3 className="mb-2 text-sm font-medium text-[#b3a291]">Waiting for you</h3>
           <ul className="flex flex-col gap-1.5 text-sm">
             {waiting.slice(0, 5).map((o) => (
               <li key={o.id} className="flex items-center gap-2 rounded-lg bg-[#211a14] px-3 py-2">
@@ -229,7 +235,7 @@ function LivePanel({ state }: { state: CafeState }) {
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-[#7a6a5c]">Say “accept the {sourceOf(waiting[0])} order, ten minutes”</p>
+          <p className="mt-2 text-xs text-[#8a7a6c]">Say “accept the {sourceOf(waiting[0])} order, ten minutes”</p>
         </div>
       )}
       <Link href="/" className="text-center text-sm text-[#b3a291] underline">
@@ -250,30 +256,38 @@ function Connections({ state }: { state: CafeState }) {
       : "Delivery apps are simulated for the demo.";
   return (
     <div>
-      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[#b3a291]">Selling on</h3>
+      <h3 className="mb-2 text-sm font-medium text-[#b3a291]">Selling on</h3>
       <ul className="flex flex-wrap gap-1.5 text-xs">
-        <li className="rounded-full bg-[#1c3326] px-2.5 py-1 text-[#6fc490]">● Website</li>
+        <li className="flex items-center gap-1.5 rounded-full bg-[#1c3326] px-2.5 py-1 text-[#6fc490]">
+          <Dot on />
+          Website
+        </li>
         {apps.map((a) => (
           <li
             key={a.id}
-            className={`rounded-full px-2.5 py-1 ${a.on ? "bg-[#1c3326] text-[#6fc490]" : "bg-[#211a14] text-[#7a6a5c]"}`}
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${a.on ? "bg-[#1c3326] text-[#6fc490]" : "bg-[#211a14] text-[#8a7a6c]"}`}
           >
-            {a.on ? "●" : "○"} {a.name}
+            <Dot on={a.on} />
+            {a.name}
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-[#7a6a5c]">
+      <p className="mt-2 text-xs text-[#8a7a6c]">
         {hint}
       </p>
     </div>
   );
 }
 
+function Dot({ on }: { on?: boolean }) {
+  return <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-current" : "border border-current"}`} aria-hidden />;
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-[#211a14] px-2 py-2">
+    <div className="rounded-lg bg-[#211a14] px-2 py-2.5">
       <div className="text-lg font-semibold tabular-nums">{value}</div>
-      <div className="text-[11px] uppercase tracking-wide text-[#7a6a5c]">{label}</div>
+      <div className="text-xs text-[#8a7a6c]">{label}</div>
     </div>
   );
 }
@@ -291,14 +305,14 @@ function Settings({ onReset }: { onReset: (mode: "blank" | "sample") => Promise<
   return (
     <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
       <button
-        className="rounded-md border border-[#3a2f26] px-2 py-1 text-xs text-[#b3a291]"
+        className="flex items-center gap-1.5 rounded-md border border-[#3a2f26] px-2 py-1 text-xs text-[#b3a291] transition-colors hover:bg-[#211a14]"
         onClick={() => {
           setOpen((o) => !o);
           setConfirm(null);
         }}
         aria-expanded={open}
       >
-        Device ⋯
+        Device <Icon name="more" size={14} />
       </button>
       {open && (
         <div className="absolute right-0 z-10 mt-2 flex w-60 flex-col gap-1 rounded-xl border border-[#3a2f26] bg-[#17120e] p-2 text-sm">

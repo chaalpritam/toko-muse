@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client/state";
 import { timeOf } from "@/lib/format";
 import type { WaMessage } from "@/lib/whatsapp";
+import { Icon } from "@/components/Icon";
 
 // Plays a customer's phone messaging the café on WhatsApp, for demos without a WhatsApp Business number.
 // Messages go through the same handling as the real WhatsApp webhook.
@@ -110,6 +111,7 @@ export default function WhatsAppSim() {
           <input
             className="min-w-0 flex-1 rounded-full bg-white px-4 py-2 text-sm text-[#111b21] dark:bg-[#2a3942] dark:text-[#e9edef]"
             placeholder="Message"
+            aria-label="Message"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
@@ -118,7 +120,7 @@ export default function WhatsAppSim() {
             disabled={busy || !text.trim()}
             aria-label="Send"
           >
-            ➤
+            <Icon name="send" size={16} />
           </button>
         </form>
       </div>
