@@ -5,6 +5,7 @@ import { OwnerShell } from "@/components/OwnerShell";
 import { api, useCafeState } from "@/lib/client/state";
 import { money, timeOf } from "@/lib/format";
 import type { Box } from "@/lib/muse";
+import { Icon } from "@/components/Icon";
 
 export default function StockPage() {
   const { state, refresh } = useCafeState();
@@ -17,8 +18,8 @@ export default function StockPage() {
           <p className="mb-3 text-sm text-muted">Sold-out items disappear from the online order page straight away.</p>
           <ul className="divide-y divide-line">
             {state?.menu.map((m) => (
-              <li key={m.id} className="flex items-center gap-3 py-2 text-sm">
-                <span className="flex-1">
+              <li key={m.id} className="flex items-center gap-3 py-2.5 text-sm">
+                <span className={`min-w-0 flex-1 ${m.available ? "" : "text-muted"}`}>
                   {m.name}
                   <span className="ml-2 text-xs text-muted">{m.category}</span>
                 </span>
@@ -29,10 +30,22 @@ export default function StockPage() {
                 )}
                 <span className="w-16 text-right tabular-nums">{money(m.price_cents)}</span>
                 <button
-                  className={`pill w-20 justify-center ${m.available ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn"}`}
+                  role="switch"
+                  aria-checked={!!m.available}
+                  aria-label={`${m.name} available`}
+                  className="flex w-[5.5rem] items-center justify-end gap-2 text-xs"
                   onClick={() => api("/api/menu", { id: m.id, available: !m.available }, "PATCH").then(refresh)}
                 >
-                  {m.available ? "On menu" : "Sold out"}
+                  <span className={m.available ? "text-muted" : "font-medium text-warn"}>{m.available ? "On" : "Sold out"}</span>
+                  <span
+                    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${m.available ? "bg-ok" : "bg-line"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)] transition-[left] ${
+                        m.available ? "left-[18px]" : "left-0.5"
+                      }`}
+                    />
+                  </span>
                 </button>
               </li>
             ))}
@@ -45,9 +58,9 @@ export default function StockPage() {
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted">
+              <thead className="border-b border-line text-left text-xs text-muted">
                 <tr>
-                  <th className="py-2 font-medium">Item</th>
+                  <th className="py-2 pl-2 font-medium">Item</th>
                   <th className="font-medium">Level</th>
                   <th className="font-medium">On hand</th>
                   <th className="font-medium">Par</th>
@@ -60,8 +73,8 @@ export default function StockPage() {
                   const pct = Math.min(100, (s.qty / Math.max(s.par * 3, 1)) * 100);
                   const low = s.qty <= s.par;
                   return (
-                    <tr key={s.id}>
-                      <td className="py-2 capitalize">{s.name}</td>
+                    <tr key={s.id} className={low ? "bg-warn-soft/40" : ""}>
+                      <td className="py-2.5 pl-2 capitalize">{s.name}</td>
                       <td className="w-40 pr-4">
                         <div className="h-1.5 rounded-full bg-line">
                           <div
@@ -77,8 +90,8 @@ export default function StockPage() {
                         {s.par} {s.unit}
                       </td>
                       <td className="text-muted">{s.supplier_name}</td>
-                      <td className="text-right">
-                        <button className="btn" onClick={() => api("/api/stock", { id: s.id, qty: s.reorder_qty }).then(refresh)}>
+                      <td className="pr-2 text-right">
+                        <button className="btn btn-quiet" onClick={() => api("/api/stock", { id: s.id, qty: s.reorder_qty }).then(refresh)}>
                           + {s.reorder_qty} {s.unit} received
                         </button>
                       </td>
@@ -147,7 +160,7 @@ function CaseCamera({ onCounted }: { onCounted: () => void }) {
       <div className="mb-1 flex items-center gap-2">
         <h2 className="font-semibold">Display case</h2>
         {cams.length > 1 && (
-          <select className="ml-auto rounded-md border border-line bg-surface px-2 py-1 text-xs" value={camId} onChange={(e) => setCamId(e.target.value)}>
+          <select aria-label="Camera" className="field ml-auto w-auto py-1 pl-2 text-xs" value={camId} onChange={(e) => setCamId(e.target.value)}>
             {cams.map((c) => (
               <option key={c.deviceId} value={c.deviceId}>
                 {c.label || "Camera"}
@@ -168,11 +181,17 @@ function CaseCamera({ onCounted }: { onCounted: () => void }) {
           muted
           className={`aspect-video w-full object-cover ${on && !(shot && results.length) ? "" : "hidden"}`}
         />
-        {!on && <div className="flex aspect-video items-center justify-center text-sm text-white/70">Camera off</div>}
+        {!on && (
+          <div className="flex aspect-video flex-col items-center justify-center gap-2 text-sm text-white/60">
+            <Icon name="camera" size={28} />
+            Camera off
+          </div>
+        )}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {!on ? (
           <button className="btn btn-primary" onClick={() => setOn(true)}>
+            <Icon name="camera" size={15} />
             Start camera
           </button>
         ) : shot && results.length ? (
@@ -185,7 +204,11 @@ function CaseCamera({ onCounted }: { onCounted: () => void }) {
           </button>
         )}
       </div>
-      {error && <p className="mt-2 text-sm text-accent">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
       {results.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-2 text-sm">
           {results.map((r, i) => (

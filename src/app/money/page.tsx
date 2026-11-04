@@ -5,6 +5,7 @@ import { OwnerShell } from "@/components/OwnerShell";
 import { api, fileToDataUrl, shrinkImage, speak, useCafeState } from "@/lib/client/state";
 import { money, timeOf } from "@/lib/format";
 import { CHANNELS, CHANNEL_LABEL, sourceOf } from "@/lib/channels";
+import { Icon } from "@/components/Icon";
 
 export default function MoneyPage() {
   const { state, refresh } = useCafeState();
@@ -50,36 +51,49 @@ export default function MoneyPage() {
     <OwnerShell state={state}>
       <div className="grid gap-5 lg:grid-cols-3">
         <section className="card p-4 lg:col-span-2">
-          <h2 className="mb-3 font-semibold">Today’s takings</h2>
+          <h2 className="mb-4 font-semibold">Today’s takings</h2>
           {s && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Tile label="Total" value={money(s.revenue_cents)} strong />
-              <Tile label="Card (Stripe)" value={money(s.by_method_cents.card)} />
-              <Tile label="Online (Stripe)" value={money(s.by_method_cents.online)} />
-              <Tile label="Cash" value={money(s.by_method_cents.cash)} />
-              <Tile label="Delivery apps" value={money(s.by_method_cents.platform)} />
-              <Tile label="Expenses" value={money(s.expenses_cents)} />
-              <Tile label="Net" value={money(s.revenue_cents - s.expenses_cents)} strong />
-              <Tile label="Orders" value={`${s.orders}`} />
-            </div>
-          )}
-          {s && s.orders > 0 && (
-            <p className="mt-3 text-sm text-muted">
-              {CHANNELS.filter((c) => s.by_channel[c] > 0)
-                .map((c) => `${s.by_channel[c]} ${CHANNEL_LABEL[c]}`)
-                .join(" · ")}
-            </p>
+            <>
+              <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                <Figure label="Taken" value={money(s.revenue_cents)} />
+                <span className="pb-6 text-lg text-muted" aria-hidden>
+                  −
+                </span>
+                <Figure label="Expenses" value={money(s.expenses_cents)} />
+                <span className="pb-6 text-lg text-muted" aria-hidden>
+                  =
+                </span>
+                <Figure
+                  label="Net"
+                  value={money(s.revenue_cents - s.expenses_cents)}
+                  tone={s.revenue_cents - s.expenses_cents < 0 ? "text-danger" : "text-ok"}
+                />
+              </div>
+              <p className="mt-2 text-sm text-muted">
+                {s.orders === 0
+                  ? "No orders yet today."
+                  : `${s.orders} order${s.orders === 1 ? "" : "s"}: ${CHANNELS.filter((c) => s.by_channel[c] > 0)
+                      .map((c) => `${s.by_channel[c]} ${CHANNEL_LABEL[c]}`)
+                      .join(" · ")}`}
+              </p>
+              <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-line pt-4 text-sm sm:grid-cols-4">
+                <Method label="Card at the counter" value={s.by_method_cents.card} note="Stripe" />
+                <Method label="Online" value={s.by_method_cents.online} note="Stripe" />
+                <Method label="Cash" value={s.by_method_cents.cash} />
+                <Method label="Delivery apps" value={s.by_method_cents.platform} note="paid in app" />
+              </dl>
+            </>
           )}
           {s && s.unpaid.length > 0 && (
-            <p className="mt-3 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
+            <p className="mt-4 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
               Unpaid: {s.unpaid.map((u) => `#${u.number} (${money(u.total_cents)})`).join(", ")}
             </p>
           )}
-          <h3 className="mb-2 mt-5 text-sm font-medium text-muted">Payments</h3>
+          <h3 className="mb-1 mt-6 text-sm font-medium">Payments</h3>
           <ul className="divide-y divide-line text-sm">
             {paid.map((o) => (
               <li key={o.id} className="flex gap-3 py-2">
-                <span className="w-12 tabular-nums text-muted">{o.paid_at ? timeOf(o.paid_at) : ""}</span>
+                <span className="w-12 shrink-0 tabular-nums text-muted">{o.paid_at ? timeOf(o.paid_at) : ""}</span>
                 <span className="flex-1">
                   #{o.number} {o.label && <span className="text-muted">{o.label}</span>}
                 </span>
@@ -105,7 +119,8 @@ export default function MoneyPage() {
               Snap a supplier invoice or receipt. Muse Spark reads it, logs the expense and restocks delivered ingredients.
             </p>
             <label className={`btn ${receiptBusy ? "opacity-50" : "cursor-pointer"}`}>
-              {receiptBusy ? "Reading…" : "📷 Add photo"}
+              <Icon name="camera" size={15} />
+              {receiptBusy ? "Reading…" : "Add photo"}
               <input
                 type="file"
                 accept="image/*"
@@ -116,6 +131,7 @@ export default function MoneyPage() {
               />
             </label>
             {receiptMsg && <p className="mt-2 text-sm">{receiptMsg}</p>}
+            {state && state.expenses.length === 0 && <p className="mt-3 text-sm text-muted">No expenses logged today.</p>}
             <ul className="mt-3 divide-y divide-line text-sm">
               {state?.expenses.map((e) => (
                 <li key={e.id} className="flex gap-2 py-2">
@@ -132,11 +148,23 @@ export default function MoneyPage() {
   );
 }
 
-function Tile({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function Figure({ label, value, tone = "" }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="rounded-lg border border-line p-3">
-      <div className="text-xs text-muted">{label}</div>
-      <div className={`tabular-nums ${strong ? "text-xl font-semibold" : "text-lg"}`}>{value}</div>
+    <div>
+      <div className={`text-3xl font-semibold tracking-tight tabular-nums ${tone}`}>{value}</div>
+      <div className="mt-0.5 text-sm text-muted">{label}</div>
+    </div>
+  );
+}
+
+function Method({ label, value, note }: { label: string; value: number; note?: string }) {
+  return (
+    <div>
+      <dt className="text-muted">
+        {label}
+        {note && <span className="text-xs"> · {note}</span>}
+      </dt>
+      <dd className={`mt-0.5 text-base font-medium tabular-nums ${value ? "" : "text-muted"}`}>{money(value)}</dd>
     </div>
   );
 }
