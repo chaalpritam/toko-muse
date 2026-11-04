@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CafeState } from "@/lib/client/state";
 import { money } from "@/lib/format";
+import { Icon } from "@/components/Icon";
 
 const NAV = [
   { href: "/", label: "Counter" },
@@ -21,27 +22,32 @@ export function OwnerShell({ state, children }: { state: CafeState | null; child
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <div className="flex items-baseline gap-2">
-            <span className="text-lg font-semibold">{state?.shop.name || "Your café"}</span>
-            <span className="text-xs text-muted">Toko Muse back office</span>
+            <span className="font-display text-xl font-semibold tracking-tight">{state?.shop.name || "Your café"}</span>
+            <span className="hidden text-xs text-muted sm:inline">back office</span>
           </div>
-          <nav className="flex gap-1">
+          <nav className="-mx-1 flex gap-0.5 overflow-x-auto">
             {NAV.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`rounded-lg px-3 py-1.5 text-sm ${
-                  path === n.href ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-foreground"
+                aria-current={path === n.href ? "page" : undefined}
+                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                  path === n.href ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-line/60 hover:text-foreground"
                 }`}
               >
                 {n.label}
               </Link>
             ))}
-            <a href={state?.shop.slug ? `/s/${state.shop.slug}` : "/order"} target="_blank" className="rounded-lg px-3 py-1.5 text-sm text-muted hover:text-foreground">
-              Store ↗
+            <a
+              href={state?.shop.slug ? `/s/${state.shop.slug}` : "/order"}
+              target="_blank"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-line/60 hover:text-foreground"
+            >
+              Store <Icon name="external" size={13} />
             </a>
           </nav>
           {s && (
-            <div className="ml-auto flex gap-5 text-sm">
+            <div className="ml-auto flex gap-5 text-sm sm:gap-6">
               <Stat label="Taken today" value={money(s.revenue_cents)} />
               <Stat label="Orders" value={`${s.orders}`} />
               <Stat label="Unpaid" value={`${s.unpaid.length}`} warn={s.unpaid.length > 0} />
@@ -58,8 +64,8 @@ export function OwnerShell({ state, children }: { state: CafeState | null; child
 function Stat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
   return (
     <div className="flex flex-col leading-tight">
-      <span className="text-[11px] uppercase tracking-wide text-muted">{label}</span>
-      <span className={`font-semibold tabular-nums ${warn ? "text-warn" : ""}`}>{value}</span>
+      <span className={`text-base font-semibold tabular-nums ${warn ? "text-warn" : ""}`}>{value}</span>
+      <span className="text-xs text-muted">{label}</span>
     </div>
   );
 }
