@@ -1,5 +1,5 @@
 const currency = (process.env.NEXT_PUBLIC_CURRENCY ?? "usd").toUpperCase();
-const formatter = new Intl.NumberFormat(undefined, { style: "currency", currency });
+const formatter = new Intl.NumberFormat(undefined, { style: "currency", currency, currencyDisplay: "narrowSymbol" });
 
 export function money(cents: number) {
   return formatter.format(cents / 100);
