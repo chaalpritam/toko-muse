@@ -5,6 +5,7 @@ import { OwnerShell } from "@/components/OwnerShell";
 import { api, fileToDataUrl, shrinkImage, useCafeState } from "@/lib/client/state";
 import { money } from "@/lib/format";
 import type { Box } from "@/lib/muse";
+import { Icon } from "@/components/Icon";
 
 interface Promo {
   id: number;
@@ -91,7 +92,7 @@ export default function PromoPage() {
             Dish
             <input
               list="menu-items"
-              className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-1.5"
+              className="field mt-1"
               placeholder="e.g. Almond Croissant"
               value={dish}
               onChange={(e) => setDish(e.target.value)}
@@ -103,19 +104,20 @@ export default function PromoPage() {
           <label className="text-sm">
             Anything to mention <span className="text-muted">(optional)</span>
             <input
-              className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-1.5"
+              className="field mt-1"
               placeholder="fresh out of the oven, only till 11am"
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
           </label>
-          <label className="btn cursor-pointer self-start">
-            📷 {photo ? "Change photo" : "Add photo"}
+          <label className="btn cursor-pointer self-start focus-within:outline-2 focus-within:outline-accent">
+            <Icon name="camera" size={15} />
+            {photo ? "Change photo" : "Add photo"}
             <input
               type="file"
               accept="image/*"
               capture="environment"
-              className="hidden"
+              className="sr-only"
               onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
@@ -129,18 +131,38 @@ export default function PromoPage() {
           <button className="btn btn-primary" disabled={!photo || !dish || step !== ""} onClick={make}>
             {step === "finding" ? "Finding the dish…" : step === "designing" ? "Designing the poster…" : "Make the post"}
           </button>
-          {error && <p className="text-sm text-accent">{error}</p>}
+          {!photo || !dish ? (
+            <p className="text-xs text-muted">{!dish ? "Pick a dish, then add a photo." : "Add a photo of the dish."}</p>
+          ) : null}
+          {error && (
+            <p role="alert" className="text-sm text-danger">
+              {error}
+            </p>
+          )}
         </section>
         <section className="flex flex-col gap-5">
           {result && <PromoCard promo={{ id: 0, dish, ...result }} large />}
-          <div>
-            <h3 className="mb-2 text-sm font-medium text-muted">Recent posts</h3>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {history.map((p) => (
-                <PromoCard key={p.id} promo={p} />
-              ))}
-              {history.length === 0 && <p className="text-sm text-muted">No posts yet.</p>}
+          {!result && step !== "" && (
+            <div className="flex aspect-[4/3] max-w-xl animate-pulse flex-col items-center justify-center gap-2 rounded-[14px] bg-sunken text-sm text-muted">
+              <Icon name="image" size={28} />
+              {step === "finding" ? "SAM 3.1 is finding the dish…" : "Muse Image is designing the poster…"}
             </div>
+          )}
+          <div>
+            <h3 className="mb-2 text-sm font-medium">Recent posts</h3>
+            {history.length === 0 ? (
+              <div className="flex max-w-xl flex-col items-center gap-2 rounded-[14px] border border-dashed border-line px-6 py-12 text-center text-sm text-muted">
+                <Icon name="image" size={28} />
+                <p>Your posters and captions show up here.</p>
+                <p className="text-xs">The newest one also goes on your store page as today’s special.</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {history.map((p) => (
+                  <PromoCard key={p.id} promo={p} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>
@@ -164,8 +186,10 @@ function PromoCard({ promo, large }: { promo: Promo; large?: boolean }) {
             onClick={() => {
               void navigator.clipboard.writeText(promo.caption);
               setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
             }}
           >
+            {copied && <Icon name="check" size={14} />}
             {copied ? "Copied" : "Copy caption"}
           </button>
         </div>
