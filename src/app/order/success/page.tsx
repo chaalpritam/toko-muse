@@ -22,7 +22,7 @@ function Success() {
       <p className="text-sm text-muted">{order?.shop}</p>
       {order ? (
         <>
-          <h1 className="text-2xl font-semibold">
+          <h1 className="font-display text-3xl font-semibold text-balance">
             {order.payment_status === "paid" ? `Paid — order #${order.number} is in` : `Order #${order.number}`}
           </h1>
           <p className="text-muted">

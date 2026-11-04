@@ -24,7 +24,7 @@ export default async function Store(props: PageProps<"/s/[slug]">) {
   if (shop.stage !== "live")
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-2 px-4 text-center">
-        <h1 className="text-3xl font-semibold">{shop.name}</h1>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">{shop.name}</h1>
         <p className="text-muted">Opening soon.</p>
       </main>
     );
@@ -34,29 +34,36 @@ export default async function Store(props: PageProps<"/s/[slug]">) {
     | undefined;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 pt-10">
-      <header className="mb-8">
-        <h1 className="text-4xl font-semibold tracking-tight">{shop.name}</h1>
-        {shop.tagline && <p className="mt-2 text-lg text-muted">{shop.tagline}</p>}
+    <main className="mx-auto w-full max-w-2xl px-4 pt-12 sm:pt-16">
+      <header className="mb-10">
+        <h1 className="font-display text-5xl font-semibold tracking-tight text-balance sm:text-6xl">{shop.name}</h1>
+        {shop.tagline && <p className="mt-3 font-display text-xl text-muted text-pretty">{shop.tagline}</p>}
         {(shop.hours || shop.address) && (
-          <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            {shop.hours && <span>{shop.hours}</span>}
+          <p className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+            {shop.hours && <span className="font-medium">{shop.hours}</span>}
+            {shop.hours && shop.address && (
+              <span className="text-muted" aria-hidden>
+                ·
+              </span>
+            )}
             {shop.address && <span className="text-muted">{shop.address}</span>}
           </p>
         )}
-        {shop.about && <p className="mt-4 max-w-prose">{shop.about}</p>}
+        {shop.about && <p className="mt-5 max-w-prose leading-relaxed">{shop.about}</p>}
       </header>
       {special && (
-        <section className="card mb-8 overflow-hidden">
+        <section className="card mb-10 overflow-hidden sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <img src={special.image} alt={`Today's special: ${special.dish}`} className="aspect-square w-full object-cover" />
-          <div className="p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-accent">Today’s special</p>
-            <p className="mt-1">{special.caption}</p>
+          <div className="flex flex-col justify-center p-5 sm:p-6">
+            <h2 className="font-display text-2xl font-semibold leading-tight">
+              Today’s special: <span className="text-accent">{special.dish}</span>
+            </h2>
+            <p className="mt-2 whitespace-pre-line leading-relaxed text-muted">{special.caption}</p>
           </div>
         </section>
       )}
-      <h2 className="mb-1 text-xl font-semibold">Order ahead</h2>
-      <p className="mb-6 text-muted">Skip the queue, we’ll call your name.</p>
+      <h2 className="font-display text-3xl font-semibold tracking-tight">Order ahead</h2>
+      <p className="mb-8 mt-1 text-muted">Skip the queue, we’ll call your name.</p>
       <StoreMenu cafe={shop.name} />
     </main>
   );
