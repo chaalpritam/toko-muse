@@ -29,7 +29,8 @@ npm run dev                  # http://localhost:3000
 ```
 
 - `/device` The counter device: hold the orb (or **Space**) to talk. A new device walks you through setup; a live one shows the store's QR code
-- `/` Counter: order board, push-to-talk (hold the button or **Space**), approvals, crew activity
+- `/` What Toko Muse is and why we built it, with links into the demo. Set `NEXT_PUBLIC_DEMO_VIDEO_URL` to show the demo video link
+- `/counter` Counter: order board, push-to-talk (hold the button or **Space**), approvals, crew activity
 - `/stock` Menu, ingredients, display-case camera
 - `/money` Takings by payment method, receipts, close of day
 - `/promo` Today's special → poster and caption

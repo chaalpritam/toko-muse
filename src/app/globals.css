@@ -34,6 +34,26 @@
   }
 }
 
+/* The café's light palette whatever the visitor's system theme (the landing page). */
+.theme-light {
+  --background: #f7f3ec;
+  --surface: #fffdf9;
+  --foreground: #2a1f17;
+  --muted: #6f5f51;
+  --line: #e7ddd0;
+  --accent: #b4532a;
+  --accent-soft: #f6e3d7;
+  --ok: #2f7a4f;
+  --ok-soft: #dcefe3;
+  --warn: #8f5b00;
+  --warn-soft: #fbefd2;
+  --sunken: #efe8dd;
+  --danger: #b3261e;
+  color-scheme: light;
+  background: var(--background);
+  color: var(--foreground);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
