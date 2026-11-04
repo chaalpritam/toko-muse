@@ -35,7 +35,9 @@ export default function WhatsAppSim() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => bottom.current?.scrollIntoView({ block: "end" }), [messages.length]);
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: "end" });
+  }, [messages.length]);
 
   const send = async () => {
     const t = text.trim();
