@@ -140,7 +140,7 @@ export default async function Landing() {
                 body="Every order lands in one queue: the counter, the website, WhatsApp and delivery apps. New ones are called out loud. Accept, ring up, sell out and reorder by voice. Anything that spends money or messages someone outside the café waits for your OK."
                 say="Accept the WhatsApp order, five minutes."
                 shot={counterShot}
-                alt="The back-office Counter: orders from the website, WhatsApp and QuickBite moving through New, Making and Ready, beside the crew's activity log."
+                alt="The back-office order board: website, WhatsApp and QuickBite orders moving through New, Making and Ready."
               />
             </div>
           </div>
